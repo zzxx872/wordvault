@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>词库工作台 · WordVault Web</title>
+<meta name="theme-color" content="#14161a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="词库">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#14161a; --panel:#1c1f26; --panel2:#22262f; --line:#2c313c;
+  --tx:#e8eaee; --tx2:#a2abb8; --tx3:#6f7885;
+  --acc:#4f8cff; --acc2:#2f6ae0;
+  --ok:#3fb950; --warn:#d8a021; --err:#f0554c;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--tx);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:0 0 80px;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(20,22,26,.86);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  padding:12px 0 10px;margin-bottom:18px;
+}
+.hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px;letter-spacing:.2px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.chip{
+  font-size:12px;padding:3px 9px;border-radius:20px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--tx2);white-space:nowrap
+}
+.chip b{color:var(--tx);font-weight:600}
+.chip.bad{border-color:#573;background:#2a1f1f;color:#f0a09a}
+.chip.bad b{color:#ff8a80}
+.chip.good b{color:var(--ok)}
+
+/* ---------- panel ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.panel h3{font-size:13px;font-weight:600;color:var(--tx2);letter-spacing:.4px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.panel h3 .ln{flex:1;height:1px;background:var(--line)}
+
+/* ---------- buttons ---------- */
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--tx);
+  padding:7px 13px;border-radius:8px;transition:.14s;white-space:nowrap}
+button:hover{border-color:#3b4250;background:#282d37}
+button:active{transform:scale(.97)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:500}
+button.pri:hover{background:var(--acc2);border-color:var(--acc2)}
+button.gh{background:transparent}
+button.sm{padding:4px 9px;font-size:12.5px;border-radius:7px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.sep{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+
+/* ---------- form ---------- */
+input[type=text],input[type=number],select,textarea{
+  font:inherit;background:var(--panel2);border:1px solid var(--line);color:var(--tx);
+  padding:6px 9px;border-radius:7px;outline:none;width:100%
+}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{resize:vertical;line-height:1.7;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--tx3)}
+.pref{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* ---------- table ---------- */
+.tblwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+th{
+  background:var(--panel2);color:var(--tx3);font-weight:500;font-size:12px;
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2
+}
+td{padding:3px 10px;border-bottom:1px solid #23262e;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#1f232b}
+tbody tr.off td:nth-child(2),tbody tr.off td:nth-child(3){opacity:.38;text-decoration:line-through}
+td input[type=text]{background:transparent;border:1px solid transparent;padding:4px 6px;font-size:13.5px}
+td input[type=text]:hover{background:#252a34}
+td input[type=text]:focus{background:#252a34;border-color:var(--acc)}
+.c-chk{width:38px;text-align:center}
+.c-code{width:130px}
+.c-cat{width:110px}
+.c-act{width:44px;text-align:center}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--acc);cursor:pointer}
+.xbtn{background:transparent;border:none;color:var(--tx3);padding:2px 6px;font-size:16px;line-height:1}
+.xbtn:hover{color:var(--err);background:transparent}
+.hl{background:#caa53a33;outline:1px solid #caa53a99;border-radius:3px}
+.empty{padding:34px 10px;text-align:center;color:var(--tx3);font-size:13px}
+
+/* ---------- issues ---------- */
+.issue{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:13px;border-bottom:1px solid #23262e}
+.issue:last-child{border-bottom:none}
+.issue .ic{flex:0 0 auto;font-size:13px;line-height:1.5}
+.issue.e .ic{color:var(--err)} .issue.w .ic{color:var(--warn)} .issue.i .ic{color:var(--acc)}
+.issue .tx{color:var(--tx2)} .issue .tx b{color:var(--tx)}
+
+/* ---------- modal ---------- */
+.modal{
+  position:fixed;inset:0;z-index:200;display:none;
+  background:rgba(8,9,12,.78);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:18px
+}
+.modal.on{display:flex}
+.box{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  width:100%;max-width:560px;max-height:88vh;overflow:auto;
+  box-shadow:0 24px 70px rgba(0,0,0,.6)
+}
+.box .bh{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.box .bh strong{font-size:15px}
+.box .bb{padding:18px}
+.box .bf{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.x{background:transparent;border:none;color:var(--tx3);font-size:22px;padding:0 4px;margin-left:auto;line-height:1}
+.x:hover{color:var(--tx);background:transparent}
+
+/* ---------- assist ---------- */
+#assist .box{max-width:520px}
+.prog{height:5px;background:var(--panel2);border-radius:3px;overflow:hidden;margin:0 0 16px}
+.prog i{display:block;height:100%;background:var(--acc);transition:width .3s;border-radius:3px}
+.acard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+.acard .lb{font-size:11.5px;color:var(--tx3);letter-spacing:.5px;margin-bottom:5px}
+.acard .val{
+  font-size:17px;line-height:1.5;word-break:break-all;color:var(--tx);
+  max-height:150px;overflow:auto;white-space:pre-wrap
+}
+.acard .val.big{font-size:24px;font-weight:600}
+.acard .val.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;letter-spacing:1px}
+.cbtn{width:100%;margin-top:9px;justify-content:center;display:flex;gap:6px;align-items:center}
+.cbtn.done{border-color:var(--ok);color:var(--ok);background:#16281a}
+.steps{font-size:12.5px;color:var(--tx3);line-height:1.9}
+.steps b{color:var(--tx2)}
+kbd{
+  background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:ui-monospace,monospace;color:var(--tx2)
+}
+
+/* ---------- guide ---------- */
+details.guide{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px}
+details.guide summary{padding:13px 14px;cursor:pointer;font-size:13.5px;font-weight:500;list-style:none;display:flex;align-items:center;gap:8px}
+details.guide summary::-webkit-details-marker{display:none}
+details.guide summary::before{content:"▸";color:var(--tx3);transition:.2s}
+details.guide[open] summary::before{transform:rotate(90deg)}
+details.guide .gc{padding:0 14px 16px;font-size:13px;color:var(--tx2);line-height:1.85}
+details.guide .gc h4{font-size:13px;color:var(--tx);margin:14px 0 6px}
+details.guide .gc ol{padding-left:19px} details.guide .gc ul{padding-left:19px}
+details.guide .gc li{margin:3px 0}
+.note{border-left:2px solid var(--acc);padding:8px 12px;background:#1a2029;border-radius:0 7px 7px 0;margin:10px 0}
+.note.warn{border-color:var(--warn);background:#231d13}
+.note.err{border-color:var(--err);background:#241a19}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+  background:#2a3038;border:1px solid #3d4553;color:var(--tx);
+  padding:9px 18px;border-radius:22px;font-size:13px;z-index:999;
+  opacity:0;pointer-events:none;transition:.24s;box-shadow:0 8px 30px rgba(0,0,0,.5)
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+.seg button{background:transparent;border:none;padding:5px 11px;font-size:12.5px;border-radius:6px;color:var(--tx3)}
+.seg button:hover{background:transparent;color:var(--tx2)}
+.seg button.on{background:var(--acc);color:#fff}
+.acard.hidebtn{opacity:.8}
+.acard.hidebtn .cbtn{display:none}
+.fnote{margin-top:9px;font-size:12.5px;color:var(--warn);line-height:1.7}
+.jmp{width:78px !important;font-size:12.5px !important;padding:5px 8px !important;text-align:center}
+@media(max-width:640px){
+  .c-cat{display:none} th.c-cat{display:none}
+  .stats{width:100%;margin-left:0}
+  .hd{gap:8px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <div class="logo"><span class="dot"></span>词库工作台</div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 操作区 -->
+  <div class="panel">
+    <h3>词库操作<span class="ln"></span></h3>
+    <div class="row">
+      <button class="pri" onclick="App.addRow()">＋ 手动加一条</button>
+      <button onclick="App.openImport()">批量粘贴导入</button>
+      <button onclick="App.genAllCodes()">一键生成输入码</button>
+      <button onclick="App.check()">体检 / 查重</button>
+      <button onclick="App.fixAll()">一键修复</button>
+    </div>
+    <div class="row sep">
+      <button class="gh" onclick="App.loadPreset('address')">载入模板：地址类</button>
+      <button class="gh" onclick="App.loadPreset('work')">工作话术</button>
+      <button class="gh" onclick="App.loadPreset('misc')">常用短句</button>
+      <button class="gh" onclick="App.clearAll()" style="color:var(--err)">清空词库</button>
+    </div>
+  </div>
+
+  <!-- 生成规则 -->
+  <div class="panel">
+    <h3>输入码生成规则<span class="ln"></span></h3>
+    <div class="pref">
+      <label class="f">拼音策略
+        <select id="sMode" onchange="App.saveCfg()">
+          <option value="initial">首字母（北京 → bj）</option>
+          <option value="full">全拼（北京 → beijing）</option>
+          <option value="initial2">首字母+序号（bj1）</option>
+        </select>
+      </label>
+      <label class="f">前缀符号（防误触发）
+        <select id="sPrefix" onchange="App.saveCfg()">
+          <option value="">不加前缀</option>
+          <option value="/">/</option>
+          <option value=";">;</option>
+          <option value="@@">@@</option>
+          <option value="##">##</option>
+        </select>
+      </label>
+      <label class="f">输入码最大长度
+        <input type="number" id="sMaxLen" min="2" max="12" value="5" onchange="App.saveCfg()">
+      </label>
+      <label class="f">分批导出条数
+        <input type="number" id="sBatch" min="100" max="5000" step="100" value="500" onchange="App.saveCfg()">
+      </label>
+    </div>
+  </div>
+
+  <!-- 问题 -->
+  <div class="panel" id="issuePanel" style="display:none">
+    <h3><span id="issueTitle">检查结果</span><span class="ln"></span>
+      <button class="sm" onclick="document.getElementById('issuePanel').style.display='none'">收起</button>
+    </h3>
+    <div id="issues"></div>
+  </div>
+
+  <!-- 词条表 -->
+  <div class="panel">
+    <h3>词条<span class="ln"></span>
+      <input type="text" id="q" placeholder="搜索短语或输入码…" style="width:170px;font-size:12.5px;padding:4px 9px" oninput="App.render()">
+    </h3>
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="c-chk">启用</th>
+            <th>短语（要插入的完整内容）</th>
+            <th class="c-code">输入码（触发词）</th>
+            <th class="c-cat">分类</th>
+            <th class="c-act"></th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+      <div class="empty" id="empty">还没有词条。点上面的「批量粘贴导入」或「载入模板」开始。</div>
+    </div>
+  </div>
+
+  <!-- 导出 -->
+  <div class="panel">
+    <h3>导出<span class="ln"></span></h3>
+    <div class="row">
+      <button class="pri" onclick="App.exportPlist()">导出 iOS 文本替换 .plist</button>
+      <button onclick="App.exportPlistBatch()">分批导出 .plist</button>
+      <button onclick="App.exportJSON()">JSON 备份</button>
+      <button onclick="App.exportCSV()">CSV</button>
+      <button onclick="App.exportSogou()">搜狗 PC 格式</button>
+      <button onclick="App.exportSogouBdi()">搜狗 iOS (.bdi)</button>
+      <button onclick="App.exportText()">纯文本清单</button>
+    </div>
+    <div class="row sep">
+      <button onclick="App.openAssist()" style="border-color:var(--acc);color:var(--acc)">
+        📱 逐条录入助手（没有 Mac 时用）
+      </button>
+      <button onclick="App.importJSONDialog()">导入 JSON 备份</button>
+      <input type="file" id="fileJSON" accept=".json" style="display:none" onchange="App.importJSON(this)">
+    </div>
+    <div class="note" style="margin-top:12px">
+      <b>注意：</b><code>.plist</code> 在 iPhone 上<u>没有</u>导入入口，只能在 Mac 上拖入「文本替换」再由 iCloud 同步。iPhone 单机用户请用「逐条录入助手」。
+    </div>
+  </div>
+
+  <!-- 使用指引 -->
+  <details class="guide">
+    <summary>📖 三条可行路径 & 技术边界（必读）</summary>
+    <div class="gc">
+      <div class="note err">
+        <b>先纠正一个常见误解：</b>iPhone 的「设置 › 通用 › 键盘 › 文本替换」页面里<u>没有</u>「导入短语」按钮。
+        批量导入 <code>.plist</code> 是 <b>macOS 独有</b>功能（把文件拖进「系统设置 › 键盘 › 文本替换」列表）。
+        iOS 侧只能逐条手动新建；数据靠 iCloud 从 Mac 单向同步过来。
+      </div>
+
+      <h4>路径 A · Mac 中转（最稳，推荐）</h4>
+      <ol>
+        <li>在本工具里整理好词条，点「导出 iOS 文本替换 .plist」</li>
+        <li>把 .plist 传到 Mac（AirDrop / 微信文件传输 / iCloud 云盘）</li>
+        <li>Mac：<kbd>系统设置</kbd> › <kbd>键盘</kbd> › <kbd>文本替换</kbd>，把文件直接<b>拖进列表</b></li>
+        <li>确认 Mac 与 iPhone 登录同一 Apple ID，并已开启 iCloud 同步（<kbd>设置</kbd> › 你的名字 › <kbd>iCloud</kbd> › <kbd>iCloud 云盘</kbd>）</li>
+        <li>等几分钟，iPhone 上自动出现。条目多时同步会慢，属正常现象</li>
+      </ol>
+
+      <h4>路径 B · 无 Mac，iPhone 单机（用逐条录入助手）</h4>
+      <p>iPhone 无法批量写入，只能一条条建。本工具的「逐条录入助手」把每条拆成「复制短语 → 粘贴 → 复制输入码 → 粘贴 → 保存」的流水线，
+      自动记住进度，比手工编辑快得多。适合精简到 50~200 条的核心词库。</p>
+      <p style="color:var(--tx3)">提速技巧：把输入码设计得规律一点（比如全部带同一前缀），输入码那一步直接手打，能省一半时间。</p>
+
+      <h4>路径 C · 搜狗输入法云同步（无 Mac 时的唯一「真·批量」方案）</h4>
+      <ol>
+        <li>Windows 装<b>搜狗输入法</b>（你现在这台电脑就行）</li>
+        <li>本工具点「搜狗 PC 格式」导出 <code>.txt</code></li>
+        <li>搜狗：状态栏图标 → <kbd>设置属性</kbd> › <kbd>高级</kbd> › <kbd>自定义短语设置</kbd> › <kbd>导入</kbd>，选中文件
+          <br>格式为 <code>缩写,位置=短语</code>（如 <code>dz,1=北京市朝阳区…</code>），位置填 1 即可</li>
+        <li>登录<b>搜狗账号</b>并开启同步</li>
+        <li>iPhone 装「搜狗输入法」，开启「完全访问」，登录同一搜狗账号 → 词库自动同步过来</li>
+      </ol>
+      <div class="note">
+        这是<b>没有 Mac 也能真正批量写入</b>的唯一路径。代价：放弃系统输入法「纯本地、不上传」的特性，且需要开完全访问权限。
+      </div>
+      <p style="color:var(--tx3)">另一条备选：搜狗 iOS 版支持「系统设置 › 搜狗输入法 › 词库与短语 › 自定义短语 › 从文件导入」，
+      本工具的「搜狗 iOS (.bdi)」导出即为此准备（格式 <code>缩写=短语</code>、UTF-16 LE 编码）。此格式各家版本变动较多，建议先导 2~3 条试一下。</p>
+
+      <h4>关于「词库」的三层理解</h4>
+      <ul>
+        <li><b>① 自定义短语 / 文本替换</b> — 唯一可批量操作的层，就是本工具处理的层</li>
+        <li><b>② 用户词典（自动学习词、防误纠错）</b> — 没有任何公开 API，也导不进去。只能靠日常输入让系统慢慢学，或在 <kbd>设置 › 通用 › 传输或还原 iPhone › 还原 › 还原键盘词典</kbd> 重置</li>
+        <li><b>③ 第三方输入法词库</b> — 各家自己的格式，各 App 内导入</li>
+      </ul>
+      <div class="note">
+        所以「增加和管理系统输入法词库」这件事，<b>能程序化操作的只有 ①</b>。
+        好在 ① 恰好就是提升输入效率最有效的那部分——长文本模板（地址、发票信息、工作话术、邮箱签名）。
+      </div>
+
+      <h4>输入码设计三条铁律</h4>
+      <ul>
+        <li><b>别用太短的纯字母</b>：设了 <code>bj</code> → 北京，那你正常想打「不见」的时候就废了。用 <code>/bj</code>、<code>;bj</code> 这类带前缀的</li>
+        <li><b>长度 2~4 个字符最优</b>：超过 5 个字符，还不如直接打字</li>
+        <li><b>只放长文本</b>：一个 2 个字的词不值得占一个输入码。词库总量建议控制在 300~1000 条以内</li>
+      </ul>
+
+      <h4>为什么「城市库 / 通讯录」其实收益很低</h4>
+      <p>系统拼音输入法本来就有全国城市词库；通讯录里的名字系统会自动从「通讯录」学习。
+      把 585 个城市批量做成文本替换，除了挤占输入码空间、拖慢同步，几乎没有收益。
+      建议把词库重心放在<b>你反复手打的长内容</b>上。</p>
+    </div>
+  </details>
+
+  <details class="guide">
+    <summary>💻 没有 Mac，怎么把这个工具用起来？（含 GitHub Actions 云编译的判断）</summary>
+    <div class="gc">
+      <div class="note warn">
+        <b>先说一个容易被绕进去的坑：</b>用 GitHub Actions 云编译出 iOS App 装到手机上，
+        <u>并不能解决批量导入的问题</u>。因为 iOS 系统根本没开放「写文本替换」的 API——
+        你写一个 App 出来，它能做的事和这个网页一模一样，甚至更少。
+      </div>
+
+      <h4>iOS App 到底能带来什么？（诚实版）</h4>
+      <ul>
+        <li><b>不能</b>批量写入文本替换 — 没有这个 API，苹果没给</li>
+        <li><b>不能</b>写用户词典（自动学习词）— 同样没有 API</li>
+        <li><b>唯一</b>的增量是「自定义键盘扩展」——但那就等于自己写一个输入法，
+            工作量是现在的一百倍，而且还得开「完全访问」。真要走到那一步，不如直接用搜狗。</li>
+      </ul>
+      <p>所以：<b>没有 Mac 的情况下，别把精力投在 iOS App 上。</b></p>
+
+      <h4>如果还是想把 App 编译出来（技术上可行）</h4>
+      <ol>
+        <li>GitHub Actions 的 <code>macos-15</code> runner 自带 Xcode，公开仓库免费不限时长</li>
+        <li>用 <code>xcodebuild</code> 关掉签名编译出 <code>.app</code>，打成未签名 <code>.ipa</code> 上传为 Artifact</li>
+        <li>Windows 上用 <b>AltStore</b> 或 <b>Sideloadly</b>（都有 Windows 版）+ 你的 Apple ID 重签名后安装</li>
+        <li>免费 Apple ID 签名 <b>7 天过期</b>，最多 3 个 App，过期要重装</li>
+        <li>想摆脱 7 天限制，唯一正规途径是 <b>$99/年</b> 开发者账号走 TestFlight（90 天有效）</li>
+      </ol>
+      <p style="color:var(--tx3)">仓库里已备好 <code>.github/workflows/build-unsigned-ipa.yml</code>，推到 GitHub 就能跑。但请先想清楚值不值。</p>
+
+      <h4>推荐路线（按性价比排序）</h4>
+      <ol>
+        <li><b>把这个工具部署到 GitHub Pages，iPhone 上当 App 用</b> — 免费、HTTPS、不用签名、不用续期。
+            本工具已放在仓库的 <code>docs/</code> 目录，Pages 分支部署开箱即用；
+            然后 iPhone Safari 打开 → 分享 → 「添加到主屏幕」，就是个离线可用的图标。</li>
+        <li><b>搜狗 Windows + 账号云同步</b> — 见上一条「路径 C」，无 Mac 时唯一能真正批量写入的办法</li>
+        <li><b>借一台 Mac 用 10 分钟</b> — 拖入 plist，iCloud 同步到 iPhone，一劳永逸（同事/朋友/网咖都行）</li>
+        <li><b>逐条录入助手</b> — 以上都不行时的兜底，精简到 50~200 条最现实</li>
+      </ol>
+
+      <h4>部署到 GitHub Pages 的具体操作</h4>
+      <ol>
+        <li>仓库 <kbd>Settings</kbd> › <kbd>Pages</kbd> › Source 选 <kbd>Deploy from a branch</kbd>，
+            Branch 选 <kbd>main</kbd> + <kbd>/docs</kbd>，保存</li>
+        <li>等 1 分钟，访问 <code>https://zzxx872.github.io/wordvault/</code></li>
+        <li>iPhone Safari 打开该网址 → 分享 → <b>添加到主屏幕</b></li>
+      </ol>
+      <div class="note">
+        仓库里没有用 Actions 部署 Pages，是故意的：分支部署零配置、不会因为 workflow 权限失败。
+        如果你更习惯 Actions，仓库里也留了 <code>.github/workflows/pages.yml</code>（需把 Source 改成 <kbd>GitHub Actions</kbd>）。<br><br>
+        提醒：词条数据存在浏览器本地（localStorage）。换浏览器、清缓存会丢，记得偶尔点一下「JSON 备份」。
+        如果以后想多设备同步，可以再考虑接入一个云端存储，但那样就要重新权衡隐私问题了。
+      </div>
+    </div>
+  </details>
+
+</div>
+
+<!-- ============ 导入弹窗 ============ -->
+<div class="modal" id="mImport">
+  <div class="box">
+    <div class="bh"><strong>批量粘贴导入</strong><button class="x" onclick="App.close('mImport')">×</button></div>
+    <div class="bb">
+      <p style="color:var(--tx3);font-size:12.5px;margin-bottom:9px;line-height:1.8">
+        每行一条，自动识别这几种写法：<br>
+        <code>短语</code> ｜ <code>短语,输入码</code> ｜ <code>输入码=短语</code> ｜ <code>短语　输入码</code>（Tab 分隔）<br>
+        Markdown 表格（<code>| 输入码 | 短语 |</code>）也能直接粘。
+      </p>
+      <textarea id="impText" rows="12" placeholder="每行一条，例如：&#10;北京市朝阳区建国路88号SOHO现代城A座1801室,dz&#10;dz=北京市朝阳区建国路88号SOHO现代城A座1801室&#10;收到，我马上处理，稍后回复您。&#10;zkh,开户行：中国银行北京分行"></textarea>
+      <div class="row" style="margin-top:10px">
+        <label class="f" style="flex-direction:row;align-items:center;gap:6px;color:var(--tx2)">
+          <input type="checkbox" id="impAutoCode" checked> 自动补全缺失的输入码
+        </label>
+        <label class="f" style="flex-direction:row;align-items:center;gap:6px;color:var(--tx2)">
+          <input type="checkbox" id="impReplace"> 清空现有词条（覆盖导入）
+        </label>
+      </div>
+    </div>
+    <div class="bf">
+      <button onclick="App.close('mImport')">取消</button>
+      <button class="pri" onclick="App.doImport()">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 逐条录入助手 ============ -->
+<div class="modal" id="mAssist">
+  <div class="box">
+    <div class="bh"><strong>逐条录入助手</strong>
+      <span class="chip" id="asCount" style="margin-left:6px"></span>
+      <button class="x" onclick="App.close('mAssist')">×</button>
+    </div>
+    <div class="bb">
+      <div class="prog"><i id="asBar" style="width:0%"></i></div>
+
+      <div class="row" style="margin-bottom:12px">
+        <div class="seg">
+          <button id="asModeFull" class="on" onclick="App.asMode('full')">完整模式</button>
+          <button id="asModeFast" onclick="App.asMode('fast')">快速模式</button>
+        </div>
+        <input type="number" id="asJumpNo" class="jmp" min="1" placeholder="第几条">
+        <button class="sm" onclick="App.asGoto()">跳转</button>
+      </div>
+
+      <div class="acard">
+        <div class="lb">① 短语 — 粘贴到「短语」栏</div>
+        <div class="val" id="asPhrase"></div>
+        <button class="cbtn" id="asBtnP" onclick="App.asCopy('p')">复制短语</button>
+      </div>
+
+      <div class="acard" id="asCardCode">
+        <div class="lb">② 输入码 — 粘贴到「输入码」栏</div>
+        <div class="val mono" id="asCode"></div>
+        <button class="cbtn" id="asBtnC" onclick="App.asCopy('c')">复制输入码</button>
+        <div class="fnote" id="asNote" style="display:none">快速模式：输入码有规律（前缀 + 拼音首字母），直接手打更快，不用复制。</div>
+      </div>
+
+      <div class="steps" id="asSteps">
+        <b>操作流程</b><br>
+        1. 点上面两个按钮分别复制（变绿即成功）<br>
+        2. 打开 <b>设置 › 通用 › 键盘 › 文本替换</b><br>
+        3. 点右上角 <b>＋</b>，长按粘贴短语，再粘贴输入码<br>
+        4. 点 <b>存储</b>，返回这里点「完成，下一条」
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="sm gh" onclick="App.asJump()">↗ 尝试跳转设置</button>
+        <span style="font-size:11.5px;color:var(--tx3)">跳转失败属正常，手动打开设置即可</span>
+      </div>
+    </div>
+    <div class="bf">
+      <button onclick="App.asSkip()">跳过</button>
+      <button class="pri" onclick="App.asNext()">完成，下一条 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>var PY_TABLE_RAW="啊a阿a埃ai挨ai哎ai唉ai哀ai皑ai癌ai蔼ai矮ai艾ai碍ai爱ai隘ai鞍an氨an安an俺an按an暗an岸an胺an案an肮ang昂ang盎ang凹ao敖ao熬ao翱ao袄ao傲ao奥ao懊ao澳ao芭ba捌ba扒ba叭ba吧ba笆ba八ba疤ba巴ba拔ba跋ba靶ba把ba耙ba坝ba霸ba罢ba爸ba白bai柏bai百bai摆bai佰bai败bai拜bai稗bai斑ban班ban搬ban扳ban般ban颁ban板ban版ban扮ban拌ban伴ban瓣ban半ban办ban绊ban邦bang帮bang梆bang榜bang膀bang绑bang棒bang磅bang蚌bang镑bang傍bang谤bang苞bao胞bao包bao褒bao剥bo薄bao雹bao保bao堡bao饱bao宝bao抱bao报bao暴bao豹bao鲍bao爆bao杯bei碑bei悲bei卑bei北bei辈bei背bei贝bei钡bei倍bei狈bei备bei惫bei焙bei被bei奔ben苯ben本ben笨ben崩beng绷beng甭beng泵beng蹦beng迸beng逼bi鼻bi比bi鄙bi笔bi彼bi碧bi蓖bi蔽bi毕bi毙bi毖bi币bi庇bi痹bi闭bi敝bi弊bi必bi辟pi壁bi臂bi避bi陛bi鞭bian边bian编bian贬bian扁bian便bian变bian卞bian辨bian辩bian辫bian遍bian标biao彪biao膘biao表biao鳖bie憋bie别bie瘪bie彬bin斌bin濒bin滨bin宾bin摈bin兵bing冰bing柄bing丙bing秉bing饼bing炳bing病bing并bing玻bo菠bo播bo拨bo钵bo波bo博bo勃bo搏bo铂bo箔bo伯bo帛bo舶bo脖bo膊bo渤bo泊po驳bo捕bu卜bo哺bu补bu埠bu不bu布bu步bu簿bu部bu怖bu擦ca猜cai裁cai材cai才cai财cai睬cai踩cai采cai彩cai菜cai蔡cai餐can参can蚕can残can惭can惨can灿can苍cang舱cang仓cang沧cang藏cang操cao糙cao槽cao曹cao草cao厕ce策ce侧ce册ce测ce层ceng蹭ceng插cha叉cha茬cha茶cha查cha碴cha搽cha察cha岔cha差cha诧cha拆chai柴chai豺chai搀chan掺can蝉chan馋chan谗chan缠chan铲chan产chan阐chan颤chan昌chang猖chang场chang尝chang常chang长zhang偿chang肠chang厂chang敞chang畅chang唱chang倡chang超chao抄chao钞chao朝chao嘲chao潮chao巢chao吵chao炒chao车che扯che撤che掣che彻che澈che郴chen臣chen辰chen尘chen晨chen忱chen沉chen陈chen趁chen衬chen撑cheng称cheng城cheng橙cheng成cheng呈cheng乘cheng程cheng惩cheng澄cheng诚cheng承cheng逞cheng骋cheng秤cheng吃chi痴chi持chi匙shi池chi迟chi弛chi驰chi耻chi齿chi侈chi尺chi赤chi翅chi斥chi炽chi充chong冲chong虫chong崇chong宠chong抽chou酬chou畴chou踌chou稠chou愁chou筹chou仇chou绸chou瞅chou丑chou臭chou初chu出chu橱chu厨chu躇chu锄chu雏chu滁chu除chu楚chu础chu储chu矗chu搐chu触chu处chu揣chuai川chuan穿chuan椽chuan传chuan船chuan喘chuan串chuan疮chuang窗chuang幢chuang床chuang闯chuang创chuang吹chui炊chui捶chui锤chui垂chui春chun椿chun醇chun唇chun淳chun纯chun蠢chun戳chuo绰chuo疵ci茨ci磁ci雌ci辞ci慈ci瓷ci词ci此ci刺ci赐ci次ci聪cong葱cong囱cong匆cong从cong丛cong凑cou粗cu醋cu簇cu促cu蹿cuan篡cuan窜cuan摧cui崔cui催cui脆cui瘁cui粹cui淬cui翠cui村cun存cun寸cun磋cuo撮cuo搓cuo措cuo挫cuo错cuo搭da达da答da瘩da打da大da呆dai歹dai傣dai戴dai带dai殆dai代dai贷dai袋dai待dai逮dai怠dai耽dan担dan丹dan单dan郸dan掸dan胆dan旦dan氮dan但dan惮dan淡dan诞dan弹dan蛋dan当dang挡dang党dang荡dang档dang刀dao捣dao蹈dao倒dao岛dao祷dao导dao到dao稻dao悼dao道dao盗dao德de得de的de蹬deng灯deng登deng等deng瞪deng凳deng邓deng堤di低di滴di迪di敌di笛di狄di涤di翟di嫡di抵di底di地di蒂di第di帝di弟di递di缔di颠dian掂dian滇dian碘dian点dian典dian靛dian垫dian电dian佃dian甸dian店dian惦dian奠dian淀dian殿dian碉diao叼diao雕diao凋diao刁diao掉diao吊diao钓diao调diao跌die爹die碟die蝶die迭die谍die叠die丁ding盯ding叮ding钉ding顶ding鼎ding锭ding定ding订ding丢diu东dong冬dong董dong懂dong动dong栋dong侗dong恫dong冻dong洞dong兜dou抖dou斗dou陡dou豆dou逗dou痘dou都dou督du毒du犊du独du读du堵du睹du赌du杜du镀du肚du度du渡du妒du端duan短duan锻duan段duan断duan缎duan堆dui兑dui队dui对dui墩dun吨dun蹲dun敦dun顿dun囤dun钝dun盾dun遁dun掇duo哆duo多duo夺duo垛duo躲duo朵duo跺duo舵duo剁duo惰duo堕duo蛾e峨e鹅e俄e额e讹e娥e恶e厄e扼e遏e鄂e饿e恩en而er儿er耳er尔er饵er洱er二er贰er发fa罚fa筏fa伐fa乏fa阀fa法fa珐fa藩fan帆fan番fan翻fan樊fan矾fan钒fan繁fan凡fan烦fan反fan返fan范fan贩fan犯fan饭fan泛fan坊fang芳fang方fang肪fang房fang防fang妨fang仿fang访fang纺fang放fang菲fei非fei啡fei飞fei肥fei匪fei诽fei吠fei肺fei废fei沸fei费fei芬fen酚fen吩fen氛fen分fen纷fen坟fen焚fen汾fen粉fen奋fen份fen忿fen愤fen粪fen丰feng封feng枫feng蜂feng峰feng锋feng风feng疯feng烽feng逢feng冯feng缝feng讽feng奉feng凤feng佛fu否fou夫fu敷fu肤fu孵fu扶fu拂fu辐fu幅fu氟fu符fu伏fu俘fu服fu浮fu涪fu福fu袱fu弗fu甫fu抚fu辅fu俯fu釜fu斧fu脯pu腑fu府fu腐fu赴fu副fu覆fu赋fu复fu傅fu付fu阜fu父fu腹fu负fu富fu讣fu附fu妇fu缚fu咐fu噶ga嘎ga该gai改gai概gai钙gai盖gai溉gai干gan甘gan杆gan柑gan竿gan肝gan赶gan感gan秆gan敢gan赣gan冈gang刚gang钢gang缸gang肛gang纲gang岗gang港gang杠gang篙gao皋gao高gao膏gao羔gao糕gao搞gao镐gao稿gao告gao哥ge歌ge搁ge戈ge鸽ge胳ge疙ge割ge革ge葛ge格ge蛤ha阁ge隔ge铬ge个ge各ge给gei根gen跟gen耕geng更geng庚geng羹geng埂geng耿geng梗geng工gong攻gong功gong恭gong龚gong供gong躬gong公gong宫gong弓gong巩gong汞gong拱gong贡gong共gong钩gou勾gou沟gou苟gou狗gou垢gou构gou购gou够gou辜gu菇gu咕gu箍gu估gu沽gu孤gu姑gu鼓gu古gu蛊gu骨gu谷gu股gu故gu顾gu固gu雇gu刮gua瓜gua剐gua寡gua挂gua褂gua乖guai拐guai怪guai棺guan关guan官guan冠guan观guan管guan馆guan罐guan惯guan灌guan贯guan光guang广guang逛guang瑰gui规gui圭gui硅gui归gui龟gui闺gui轨gui鬼gui诡gui癸gui桂gui柜gui跪gui贵gui刽gui辊gun滚gun棍gun锅guo郭guo国guo果guo裹guo过guo哈ha骸hai孩hai海hai氦hai亥hai害hai骇hai酣han憨han邯han韩han含han涵han寒han函han喊han罕han翰han撼han捍han旱han憾han悍han焊han汗han汉han夯hang杭hang航hang壕hao嚎hao豪hao毫hao郝hao好hao耗hao号hao浩hao呵he喝he荷he菏he核he禾he和he何he合he盒he貉hao阂he河he涸he赫he褐he鹤he贺he嘿hei黑hei痕hen很hen狠hen恨hen哼heng亨heng横heng衡heng恒heng轰hong哄hong烘hong虹hong鸿hong洪hong宏hong弘hong红hong喉hou侯hou猴hou吼hou厚hou候hou后hou呼hu乎hu忽hu瑚hu壶hu葫hu胡hu蝴hu狐hu糊hu湖hu弧hu虎hu唬hu护hu互hu沪hu户hu花hua哗hua华hua猾hua滑hua画hua划hua化hua话hua槐huai徊huai怀huai淮huai坏huai欢huan环huan桓huan还hai缓huan换huan患huan唤huan痪huan豢huan焕huan涣huan宦huan幻huan荒huang慌huang黄huang磺huang蝗huang簧huang皇huang凰huang惶huang煌huang晃huang幌huang恍huang谎huang灰hui挥hui辉hui徽hui恢hui蛔hui回hui毁hui悔hui慧hui卉hui惠hui晦hui贿hui秽hui会hui烩hui汇hui讳hui诲hui绘hui荤hun昏hun婚hun魂hun浑hun混hun豁huo活huo伙huo火huo获huo或huo惑huo霍huo货huo祸huo击ji圾ji基ji机ji畸ji稽ji积ji箕ji肌ji饥ji迹ji激ji讥ji鸡ji姬ji绩ji缉ji吉ji极ji棘ji辑ji籍ji集ji及ji急ji疾ji汲ji即ji嫉ji级ji挤ji几ji脊ji己ji蓟ji技ji冀ji季ji伎ji祭ji剂ji悸ji济ji寄ji寂ji计ji记ji既ji忌ji际ji妓ji继ji纪ji嘉jia枷jia夹jia佳jia家jia加jia荚jia颊jia贾jia甲jia钾jia假jia稼jia价jia架jia驾jia嫁jia歼jian监jian坚jian尖jian笺jian间jian煎jian兼jian肩jian艰jian奸jian缄jian茧jian检jian柬jian碱jian硷jian拣jian捡jian简jian俭jian剪jian减jian荐jian槛kan鉴jian践jian贱jian见jian键jian箭jian件jian健jian舰jian剑jian饯jian渐jian溅jian涧jian建jian僵jiang姜jiang将jiang浆jiang江jiang疆jiang蒋jiang桨jiang奖jiang讲jiang匠jiang酱jiang降jiang蕉jiao椒jiao礁jiao焦jiao胶jiao交jiao郊jiao浇jiao骄jiao娇jiao嚼jue搅jiao铰jiao矫jiao侥jiao脚jiao狡jiao角jiao饺jiao缴jiao绞jiao剿jiao教jiao酵jiao轿jiao较jiao叫jiao窖jiao揭jie接jie皆jie秸jie街jie阶jie截jie劫jie节jie桔ju杰jie捷jie睫jie竭jie洁jie结jie解jie姐jie戒jie藉ji芥jie界jie借jie介jie疥jie诫jie届jie巾jin筋jin斤jin金jin今jin津jin襟jin紧jin锦jin仅jin谨jin进jin靳jin晋jin禁jin近jin烬jin浸jin尽jin劲jin荆jing兢jing茎jing睛jing晶jing鲸jing京jing惊jing精jing粳jing经jing井jing警jing景jing颈jing静jing境jing敬jing镜jing径jing痉jing靖jing竟jing竞jing净jing炯jiong窘jiong揪jiu究jiu纠jiu玖jiu韭jiu久jiu灸jiu九jiu酒jiu厩jiu救jiu旧jiu臼jiu舅jiu咎jiu就jiu疚jiu鞠ju拘ju狙ju疽ju居ju驹ju菊ju局ju咀ju矩ju举ju沮ju聚ju拒ju据ju巨ju具ju距ju踞ju锯ju俱ju句ju惧ju炬ju剧ju捐juan鹃juan娟juan倦juan眷juan卷juan绢juan撅jue攫jue抉jue掘jue倔jue爵jue觉jue决jue诀jue绝jue均jun菌jun钧jun军jun君jun峻jun俊jun竣jun浚jun郡jun骏jun喀ka咖ka卡ka咯ge开kai揩kai楷kai凯kai慨kai刊kan堪kan勘kan坎kan砍kan看kan康kang慷kang糠kang扛kang抗kang亢kang炕kang考kao拷kao烤kao靠kao坷ke苛ke柯ke棵ke磕ke颗ke科ke壳ke咳ke可ke渴ke克ke刻ke客ke课ke肯ken啃ken垦ken恳ken坑keng吭keng空kong恐kong孔kong控kong抠kou口kou扣kou寇kou枯ku哭ku窟ku苦ku酷ku库ku裤ku夸kua垮kua挎kua跨kua胯kua块kuai筷kuai侩kuai快kuai宽kuan款kuan匡kuang筐kuang狂kuang框kuang矿kuang眶kuang旷kuang况kuang亏kui盔kui岿kui窥kui葵kui奎kui魁kui傀gui馈kui愧kui溃kui坤kun昆kun捆kun困kun括kuo扩kuo廓kuo阔kuo垃la拉la喇la蜡la腊la辣la啦la莱lai来lai赖lai蓝lan婪lan栏lan拦lan篮lan阑lan兰lan澜lan谰lan揽lan览lan懒lan缆lan烂lan滥lan琅lang榔lang狼lang廊lang郎lang朗lang浪lang捞lao劳lao牢lao老lao佬lao姥lao酪lao烙lao涝lao勒lei乐le雷lei镭lei蕾lei磊lei累lei儡lei垒lei擂lei肋le类lei泪lei棱leng楞leng冷leng厘li梨li犁li黎li篱li狸li离li漓li理li李li里li鲤li礼li莉li荔li吏li栗li丽li厉li励li砾li历li利li傈li例li俐li痢li立li粒li沥li隶li力li璃li哩li俩lia联lian莲lian连lian镰lian廉lian怜lian涟lian帘lian敛lian脸lian链lian恋lian炼lian练lian粮liang凉liang梁liang粱liang良liang两liang辆liang量liang晾liang亮liang谅liang撩liao聊liao僚liao疗liao燎liao寥liao辽liao潦lao了le撂liao镣liao廖liao料liao列lie裂lie烈lie劣lie猎lie琳lin林lin磷lin霖lin临lin邻lin鳞lin淋lin凛lin赁lin吝lin拎lin玲ling菱ling零ling龄ling铃ling伶ling羚ling凌ling灵ling陵ling岭ling领ling另ling令ling溜liu琉liu榴liu硫liu馏liu留liu刘liu瘤liu流liu柳liu六liu龙long聋long咙long笼long窿long隆long垄long拢long陇long楼lou娄lou搂lou篓lou漏lou陋lou芦lu卢lu颅lu庐lu炉lu掳lu卤lu虏lu鲁lu麓lu碌lu露lu路lu赂lu鹿lu潞lu禄lu录lu陆lu戮lu驴lv吕lv铝lv侣lv旅lv履lv屡lv缕lv虑lv氯lv律lv率lv滤lv绿lv峦luan挛luan孪luan滦luan卵luan乱luan掠lve略lve抡lun轮lun伦lun仑lun沦lun纶lun论lun萝luo螺luo罗luo逻luo锣luo箩luo骡luo裸luo落luo洛luo骆luo络luo妈ma麻ma玛ma码ma蚂ma马ma骂ma嘛ma吗ma埋mai买mai麦mai卖mai迈mai脉mai瞒man馒man蛮man满man蔓man曼man慢man漫man谩man芒mang茫mang盲mang氓mang忙mang莽mang猫mao茅mao锚mao毛mao矛mao铆mao卯mao茂mao冒mao帽mao貌mao贸mao么me玫mei枚mei梅mei酶mei霉mei煤mei没mei眉mei媒mei镁mei每mei美mei昧mei寐mei妹mei媚mei门men闷men们men萌meng蒙meng檬meng盟meng锰meng猛meng梦meng孟meng眯mi醚mi靡mi糜mi迷mi谜mi弥mi米mi秘mi觅mi泌mi蜜mi密mi幂mi棉mian眠mian绵mian冕mian免mian勉mian娩mian缅mian面mian苗miao描miao瞄miao藐miao秒miao渺miao庙miao妙miao蔑mie灭mie民min抿min皿min敏min悯min闽min明ming螟ming鸣ming铭ming名ming命ming谬miu摸mo摹mo蘑mo模mo膜mo磨mo摩mo魔mo抹mo末mo莫mo墨mo默mo沫mo漠mo寞mo陌mo谋mou牟mou某mou拇mu牡mu亩mu姆mu母mu墓mu暮mu幕mu募mu慕mu木mu目mu睦mu牧mu穆mu拿na哪na呐na钠na那na娜na纳na氖nai乃nai奶nai耐nai奈nai南nan男nan难nan囊nang挠nao脑nao恼nao闹nao淖nao呢ne馁nei内nei嫩nen能neng妮ni霓ni倪ni泥ni尼ni拟ni你ni匿ni腻ni逆ni溺ni蔫nian拈nian年nian碾nian撵nian捻nian念nian娘niang酿niang鸟niao尿niao捏nie聂nie孽nie啮nie镊nie镍nie涅nie您nin柠ning狞ning凝ning宁ning拧ning泞ning牛niu扭niu钮niu纽niu脓nong浓nong农nong弄nong奴nu努nu怒nu女nv暖nuan虐nve疟nve挪nuo懦nuo糯nuo诺nuo哦o欧ou鸥ou殴ou藕ou呕ou偶ou沤ou啪pa趴pa爬pa帕pa怕pa琶pa拍pai排pai牌pai徘pai湃pai派pai攀pan潘pan盘pan磐pan盼pan畔pan判pan叛pan乓pang庞pang旁pang耪pang胖pang抛pao咆pao刨pao炮pao袍pao跑pao泡pao呸pei胚pei培pei裴pei赔pei陪pei配pei佩pei沛pei喷pen盆pen砰peng抨peng烹peng澎peng彭peng蓬peng棚peng硼peng篷peng膨peng朋peng鹏peng捧peng碰peng坯pi砒pi霹pi批pi披pi劈pi琵pi毗pi啤pi脾pi疲pi皮pi匹pi痞pi僻pi屁pi譬pi篇pian偏pian片pian骗pian飘piao漂piao瓢piao票piao撇pie瞥pie拼pin频pin贫pin品pin聘pin乒ping坪ping苹ping萍ping平ping凭ping瓶ping评ping屏ping坡po泼po颇po婆po破po魄po迫po粕po剖pou扑pu铺pu仆pu莆pu葡pu菩pu蒲pu埔pu朴pu圃pu普pu浦pu谱pu曝pu瀑pu期qi欺qi栖qi戚qi妻qi七qi凄qi漆qi柒qi沏qi其qi棋qi奇qi歧qi畦qi崎qi脐qi齐qi旗qi祈qi祁qi骑qi起qi岂qi乞qi企qi启qi契qi砌qi器qi气qi迄qi弃qi汽qi泣qi讫qi掐qia恰qia洽qia牵qian扦qian钎qian铅qian千qian迁qian签qian仟qian谦qian乾qian黔qian钱qian钳qian前qian潜qian遣qian浅qian谴qian堑qian嵌qian欠qian歉qian枪qiang呛qiang腔qiang羌qiang墙qiang蔷qiang强qiang抢qiang橇qiao锹qiao敲qiao悄qiao桥qiao瞧qiao乔qiao侨qiao巧qiao鞘qiao撬qiao翘qiao峭qiao俏qiao窍qiao切qie茄jia且qie怯qie窃qie钦qin侵qin亲qin秦qin琴qin勤qin芹qin擒qin禽qin寝qin沁qin青qing轻qing氢qing倾qing卿qing清qing擎qing晴qing氰qing情qing顷qing请qing庆qing琼qiong穷qiong秋qiu丘qiu邱qiu球qiu求qiu囚qiu酋qiu泅qiu趋qu区qu蛆qu曲qu躯qu屈qu驱qu渠qu取qu娶qu龋qu趣qu去qu圈quan颧quan权quan醛quan泉quan全quan痊quan拳quan犬quan券quan劝quan缺que炔gui瘸que却que鹊que榷que确que雀que裙qun群qun然ran燃ran冉ran染ran瓤rang壤rang攘rang嚷rang让rang饶rao扰rao绕rao惹re热re壬ren仁ren人ren忍ren韧ren任ren认ren刃ren妊ren纫ren扔reng仍reng日ri戎rong茸rong蓉rong荣rong融rong熔rong溶rong容rong绒rong冗rong揉rou柔rou肉rou茹ru蠕ru儒ru孺ru如ru辱ru乳ru汝ru入ru褥ru软ruan阮ruan蕊rui瑞rui锐rui闰run润run若ruo弱ruo撒sa洒sa萨sa腮sai鳃sai塞sai赛sai三san叁san伞san散san桑sang嗓sang丧sang搔sao骚sao扫sao嫂sao瑟se色se涩se森sen僧seng莎sha砂sha杀sha刹sha沙sha纱sha傻sha啥sha煞sha筛shai晒shai珊shan苫shan杉shan山shan删shan煽shan衫shan闪shan陕shan擅shan赡shan膳shan善shan汕shan扇shan缮shan墒shang伤shang商shang赏shang晌shang上shang尚shang裳shang梢shao捎shao稍shao烧shao芍shao勺shao韶shao少shao哨shao邵shao绍shao奢she赊she蛇she舌she舍she赦she摄she射she慑she涉she社she设she砷shen申shen呻shen伸shen身shen深shen娠shen绅shen神shen沈shen审shen婶shen甚shen肾shen慎shen渗shen声sheng生sheng甥sheng牲sheng升sheng绳sheng省sheng盛sheng剩sheng胜sheng圣sheng师shi失shi狮shi施shi湿shi诗shi尸shi虱shi十shi石shi拾shi时shi什shen食shi蚀shi实shi识shi史shi矢shi使shi屎shi驶shi始shi式shi示shi士shi世shi柿shi事shi拭shi誓shi逝shi势shi是shi嗜shi噬shi适shi仕shi侍shi释shi饰shi氏shi市shi恃shi室shi视shi试shi收shou手shou首shou守shou寿shou授shou售shou受shou瘦shou兽shou蔬shu枢shu梳shu殊shu抒shu输shu叔shu舒shu淑shu疏shu书shu赎shu孰shu熟shu薯shu暑shu曙shu署shu蜀shu黍shu鼠shu属shu术shu述shu树shu束shu戍shu竖shu墅shu庶shu数shu漱shu恕shu刷shua耍shua摔shuai衰shuai甩shuai帅shuai栓shuan拴shuan霜shuang双shuang爽shuang谁shui水shui睡shui税shui吮shun瞬shun顺shun舜shun说shuo硕shuo朔shuo烁shuo斯si撕si嘶si思si私si司si丝si死si肆si寺si嗣si四si伺ci似shi饲si巳si松song耸song怂song颂song送song宋song讼song诵song搜sou艘sou擞sou嗽sou苏su酥su俗su素su速su粟su僳su塑su溯su宿su诉su肃su酸suan蒜suan算suan虽sui隋sui随sui绥sui髓sui碎sui岁sui穗sui遂sui隧sui祟sui孙sun损sun笋sun蓑suo梭suo唆suo缩suo琐suo索suo锁suo所suo塌ta他ta它ta她ta塔ta獭ta挞ta蹋ta踏ta胎tai苔tai抬tai台tai泰tai酞tai太tai态tai汰tai坍tan摊tan贪tan瘫tan滩tan坛tan檀tan痰tan潭tan谭tan谈tan坦tan毯tan袒tan碳tan探tan叹tan炭tan汤tang塘tang搪tang堂tang棠tang膛tang唐tang糖tang倘tang躺tang淌tang趟tang烫tang掏tao涛tao滔tao绦tao萄tao桃tao逃tao淘tao陶tao讨tao套tao特te藤teng腾teng疼teng誊teng梯ti剔ti踢ti锑ti提ti题ti蹄ti啼ti体ti替ti嚏ti惕ti涕ti剃ti屉ti天tian添tian填tian田tian甜tian恬tian舔tian腆tian挑tiao条tiao迢tiao眺tiao跳tiao贴tie铁tie帖tie厅ting听ting烃ting汀ting廷ting停ting亭ting庭ting挺ting艇ting通tong桐tong酮tong瞳tong同tong铜tong彤tong童tong桶tong捅tong筒tong统tong痛tong偷tou投tou头tou透tou凸tu秃tu突tu图tu徒tu途tu涂tu屠tu土tu吐tu兔tu湍tuan团tuan推tui颓tui腿tui蜕tui褪tui退tui吞tun屯tun臀tun拖tuo托tuo脱tuo鸵tuo陀tuo驮tuo驼tuo椭tuo妥tuo拓tuo唾tuo挖wa哇wa蛙wa洼wa娃wa瓦wa袜wa歪wai外wai豌wan弯wan湾wan玩wan顽wan丸wan烷wan完wan碗wan挽wan晚wan皖wan惋wan宛wan婉wan万wan腕wan汪wang王wang亡wang枉wang网wang往wang旺wang望wang忘wang妄wang威wei巍wei微wei危wei韦wei违wei桅wei围wei唯wei惟wei为wei潍wei维wei苇wei萎wei委wei伟wei伪wei尾wei纬wei未wei蔚wei味wei畏wei胃wei喂wei魏wei位wei渭wei谓wei尉wei慰wei卫wei瘟wen温wen蚊wen文wen闻wen纹wen吻wen稳wen紊wen问wen嗡weng翁weng瓮weng挝wo蜗wo涡wo窝wo我wo斡wo卧wo握wo沃wo巫wu呜wu钨wu乌wu污wu诬wu屋wu无wu芜wu梧wu吾wu吴wu毋wu武wu五wu捂wu午wu舞wu伍wu侮wu坞wu戊wu雾wu晤wu物wu勿wu务wu悟wu误wu昔xi熙xi析xi西xi硒xi矽xi晰xi嘻xi吸xi锡xi牺xi稀xi息xi希xi悉xi膝xi夕xi惜xi熄xi烯xi溪xi汐xi犀xi檄xi袭xi席xi习xi媳xi喜xi铣xi洗xi系xi隙xi戏xi细xi瞎xia虾xia匣xia霞xia辖xia暇xia峡xia侠xia狭xia下xia厦sha夏xia吓xia掀xian锨xian先xian仙xian鲜xian纤xian咸xian贤xian衔xian舷xian闲xian涎xian弦xian嫌xian显xian险xian现xian献xian县xian腺xian馅xian羡xian宪xian陷xian限xian线xian相xiang厢xiang镶xiang香xiang箱xiang襄xiang湘xiang乡xiang翔xiang祥xiang详xiang想xiang响xiang享xiang项xiang巷xiang橡xiang像xiang向xiang象xiang萧xiao硝xiao霄xiao削xue哮xiao嚣xiao销xiao消xiao宵xiao淆xiao晓xiao小xiao孝xiao校xiao肖xiao啸xiao笑xiao效xiao楔xie些xie歇xie蝎xie鞋xie协xie挟xie携xie邪xie斜xie胁xie谐xie写xie械xie卸xie蟹xie懈xie泄xie泻xie谢xie屑xie薪xin芯xin锌xin欣xin辛xin新xin忻xin心xin信xin衅xin星xing腥xing猩xing惺xing兴xing刑xing型xing形xing邢xing行xing醒xing幸xing杏xing性xing姓xing兄xiong凶xiong胸xiong匈xiong汹xiong雄xiong熊xiong休xiu修xiu羞xiu朽xiu嗅xiu锈xiu秀xiu袖xiu绣xiu墟xu戌xu需xu虚xu嘘xu须xu徐xu许xu蓄xu酗xu叙xu旭xu序xu畜chu恤xu絮xu婿xu绪xu续xu轩xuan喧xuan宣xuan悬xuan旋xuan玄xuan选xuan癣xuan眩xuan绚xuan靴xue薛xue学xue穴xue雪xue血xue勋xun熏xun循xun旬xun询xun寻xun驯xun巡xun殉xun汛xun训xun讯xun逊xun迅xun压ya押ya鸦ya鸭ya呀ya丫ya芽ya牙ya蚜ya崖ya衙ya涯ya雅ya哑ya亚ya讶ya焉yan咽yan阉yan烟yan淹yan盐yan严yan研yan蜒yan岩yan延yan言yan颜yan阎yan炎yan沿yan奄yan掩yan眼yan衍yan演yan艳yan堰yan燕yan厌yan砚yan雁yan唁yan彦yan焰yan宴yan谚yan验yan殃yang央yang鸯yang秧yang杨yang扬yang佯yang疡yang羊yang洋yang阳yang氧yang仰yang痒yang养yang样yang漾yang邀yao腰yao妖yao瑶yao摇yao尧yao遥yao窑yao谣yao姚yao咬yao舀yao药yao要yao耀yao椰ye噎ye耶ye爷ye野ye冶ye也ye页ye掖ye业ye叶ye曳ye腋ye夜ye液ye一yi壹yi医yi揖yi铱yi依yi伊yi衣yi颐yi夷yi遗yi移yi仪yi胰yi疑yi沂yi宜yi姨yi彝yi椅yi蚁yi倚yi已yi乙yi矣yi以yi艺yi抑yi易yi邑yi屹yi亿yi役yi臆yi逸yi肄yi疫yi亦yi裔yi意yi毅yi忆yi义yi益yi溢yi诣yi议yi谊yi译yi异yi翼yi翌yi绎yi茵yin荫yin因yin殷yin音yin阴yin姻yin吟yin银yin淫yin寅yin饮yin尹yin引yin隐yin印yin英ying樱ying婴ying鹰ying应ying缨ying莹ying萤ying营ying荧ying蝇ying迎ying赢ying盈ying影ying颖ying硬ying映ying哟yo拥yong佣yong臃yong痈yong庸yong雍yong踊yong蛹yong咏yong泳yong涌yong永yong恿yong勇yong用yong幽you优you悠you忧you尤you由you邮you铀you犹you油you游you酉you有you友you右you佑you釉you诱you又you幼you迂yu淤yu于yu盂yu榆yu虞yu愚yu舆yu余yu俞yu逾yu鱼yu愉yu渝yu渔yu隅yu予yu娱yu雨yu与yu屿yu禹yu宇yu语yu羽yu玉yu域yu芋yu郁yu吁xu遇yu喻yu峪yu御yu愈yu欲yu狱yu育yu誉yu浴yu寓yu裕yu预yu豫yu驭yu鸳yuan渊yuan冤yuan元yuan垣yuan袁yuan原yuan援yuan辕yuan园yuan员yuan圆yuan猿yuan源yuan缘yuan远yuan苑yuan愿yuan怨yuan院yuan曰yue约yue越yue跃yue钥yao岳yue粤yue月yue悦yue阅yue耘yun云yun郧yun匀yun陨yun允yun运yun蕴yun酝yun晕yun韵yun孕yun匝za砸za杂za栽zai哉zai灾zai宰zai载zai再zai在zai咱zan攒zan暂zan赞zan赃zang脏zang葬zang遭zao糟zao凿zao藻zao枣zao早zao澡zao蚤zao躁zao噪zao造zao皂zao灶zao燥zao责ze择ze则ze泽ze贼zei怎zen增zeng憎zeng曾ceng赠zeng扎zha喳zha渣zha札zha轧ya铡zha闸zha眨zha栅zha榨zha咋za乍zha炸zha诈zha摘zhai斋zhai宅zhai窄zhai债zhai寨zhai瞻zhan毡zhan詹zhan粘zhan沾zhan盏zhan斩zhan辗nian崭zhan展zhan蘸zhan栈zhan占zhan战zhan站zhan湛zhan绽zhan樟zhang章zhang彰zhang漳zhang张zhang掌zhang涨zhang杖zhang丈zhang帐zhang账zhang仗zhang胀zhang瘴zhang障zhang招zhao昭zhao找zhao沼zhao赵zhao照zhao罩zhao兆zhao肇zhao召zhao遮zhe折zhe哲zhe蛰zhe辙zhe者zhe锗zhe蔗zhe这zhe浙zhe珍zhen斟zhen真zhen甄zhen砧zhen臻zhen贞zhen针zhen侦zhen枕zhen疹zhen诊zhen震zhen振zhen镇zhen阵zhen蒸zheng挣zheng睁zheng征zheng狰zheng争zheng怔zheng整zheng拯zheng正zheng政zheng帧zhen症zheng郑zheng证zheng芝zhi枝zhi支zhi吱zhi蜘zhi知zhi肢zhi脂zhi汁zhi之zhi织zhi职zhi直zhi植zhi殖zhi执zhi值zhi侄zhi址zhi指zhi止zhi趾zhi只zhi旨zhi纸zhi志zhi挚zhi掷zhi至zhi致zhi置zhi帜zhi峙zhi制zhi智zhi秩zhi稚zhi质zhi炙zhi痔zhi滞zhi治zhi窒zhi中zhong盅zhong忠zhong钟zhong衷zhong终zhong种zhong肿zhong重zhong仲zhong众zhong舟zhou周zhou州zhou洲zhou诌zhou粥zhou轴zhou肘zhou帚zhou咒zhou皱zhou宙zhou昼zhou骤zhou珠zhu株zhu蛛zhu朱zhu猪zhu诸zhu诛zhu逐zhu竹zhu烛zhu煮zhu拄zhu瞩zhu嘱zhu主zhu著zhu柱zhu助zhu蛀zhu贮zhu铸zhu筑zhu住zhu注zhu祝zhu驻zhu抓zhua爪zhao拽zhuai专zhuan砖zhuan转zhuan撰zhuan赚zhuan篆zhuan桩zhuang庄zhuang装zhuang妆zhuang撞zhuang壮zhuang状zhuang椎chui锥zhui追zhui赘zhui坠zhui缀zhui谆zhun准zhun捉zhuo拙zhuo卓zhuo桌zhuo琢zuo茁zhuo酌zhuo啄zhuo着zhe灼zhuo浊zhuo兹zi咨zi资zi姿zi滋zi淄zi孜zi紫zi仔zai籽zi滓zi子zi自zi渍zi字zi鬃zong棕zong踪zong宗zong综zong总zong纵zong邹zou走zou奏zou揍zou租zu足zu卒zu族zu祖zu诅zu阻zu组zu钻zuan纂zuan嘴zui醉zui最zui罪zui尊zun遵zun昨zuo左zuo佐zuo柞zha做zuo作zuo坐zuo座zuo亍chu丌ji兀wu丐gai廿nian卅sa丕pi亘gen丞cheng鬲ge孬nao噩e丨gun禺yu丿pie匕bi乇tuo夭yao爻yao卮zhi氐di囟xin胤yin馗kui毓yu睾gao鼗tao丶zhu亟ji鼐nai乜mie乩ji亓qi芈mi孛bei啬se嘏gu仄ze厍she厝cuo厣yan厥jue厮si靥ye赝yan匚fang叵po匦gui匮kui匾bian赜ze卦gua卣you刂dao刈yi刎wen刭jing刳ku刿gui剀kai剌la剞ji剡shan剜wan蒯kuai剽piao劂jue劁qiao劐huo劓yi冂jiong罔wang亻ren仃ding仉zhang仂le仨sa仡ge仫mu仞ren伛yu仳pi伢ya佤wa仵wu伥chang伧cang伉kang伫zhu佞ning佧ka攸you佚yi佝gou佟tong佗tuo伲ni伽ga佶ji佴er侑you侉kua侃kan侏zhu佾yi佻tiao侪chai佼jiao侬nong侔mou俦chou俨yan俪li俅qiu俚li俣yu俜ping俑yong俟qi俸feng倩qian偌ruo俳pai倬zhuo倏shu倮luo倭wo俾bi倜ti倌guan倥kong倨ju偾fen偃yan偕xie偈ji偎wei偬zong偻lou傥tang傧bin傩nuo傺chi僖xi儆jing僭jian僬jiao僦jiu僮tong儇xuan儋dan仝tong氽tun佘she佥qian俎zu龠yue汆cuan籴di兮xi巽xun黉hong馘guo冁chan夔kui勹bao匍pu訇hong匐fu凫fu夙su兕si亠tou兖yan亳bo衮gun袤mao亵xie脔luan裒pou禀bing嬴ying蠃luo羸lei冫bing冱hu冽lie冼xian凇song冖mi冢zhong冥ming讠yan讦jie讧hong讪shan讴ou讵ju讷ne诂gu诃he诋di诏zhao诎qu诒yi诓kuang诔lei诖gua诘ji诙hui诜shen诟gou诠quan诤zheng诨hun诩xu诮qiao诰gao诳kuang诶ei诹zou诼zhuo诿wei谀yu谂shen谄chan谇sui谌chen谏jian谑xue谒ye谔e谕yu谖xuan谙an谛di谘zi谝pian谟mo谠dang谡su谥shi谧mi谪zhe谫jian谮zen谯qiao谲jue谳yan谵zhan谶chen卩jie卺jin阝fu阢wu阡qian阱jing阪ban阽dian阼zuo陂bei陉xing陔gai陟zhi陧nie陬zou陲chui陴pi隈wei隍huang隗kui隰xi邗han邛qiong邝kuang邙mang邬wu邡fang邴bing邳pi邶bei邺ye邸di邰tai郏jia郅zhi邾zhu郐kuai郄qie郇huan郓yun郦li郢ying郜gao郗xi郛fu郫pi郯tan郾yan鄄juan鄢yan鄞yin鄣zhang鄱po鄯shan鄹zou酃ling酆feng刍chu奂huan劢mai劬qu劭shao劾he哿ge勐meng勖xu勰xie叟sou燮xie矍jue廴yin凵qian凼dang鬯chang厶si弁bian畚ben巯qiu坌ben垩e垡fa塾shu墼ji壅yong壑he圩wei圬wu圪ge圳zhen圹kuang圮pi圯yi坜li圻qi坂ban坩gan垅long坫dian垆lu坼che坻chi坨tuo坭ni坶mu坳ao垭ya垤die垌dong垲kai埏shan垧shang垴nao垓gai垠yin埕cheng埘shi埚guo埙xun埒lie垸yuan埴zhi埯an埸yi埤pi埝nian堋peng堍tu埽sao埭dai堀ku堞die堙yin塄leng堠hou塥ge塬yuan墁man墉yong墚liang墀chi馨xin鼙pi懿yi艹cao艽jiao艿nai芏du芊qian芨ji芄wan芎qiong芑qi芗xiang芙fu芫yan芸yun芾fei芰ji苈li苊e苣ju芘pi芷zhi芮rui苋xian苌chang苁cong芩qin芴wu芡qian芪qi芟shan苄bian苎zhu芤kou苡yi茉mo苷gan苤pie茏long茇ba苜mu苴ju苒ran苘qing茌chi苻fu苓ling茑niao茚yin茆mao茔ying茕qiong苠min苕shao茜qian荑ti荛rao荜bi茈ci莒ju茼tong茴hui茱zhu莛ting荞qiao茯fu荏ren荇xing荃quan荟hui荀xun茗ming荠ji茭jiao茺chong茳jiang荦luo荥xing荨xun茛gen荩jin荬mai荪sun荭hong荮zhou莰kan荸bi莳shi莴wo莠you莪e莓mei莜you莅li荼tu莶xian莩fu荽sui莸you荻di莘shen莞guan莨lang莺ying莼chun菁jing萁qi菥xi菘song堇jin萘nai萋qi菝ba菽shu菖chang萜tie萸yu萑huan萆bi菔fu菟tu萏dan萃cui菸yan菹ju菪dang菅jian菀wan萦ying菰gu菡han葜qia葑feng葚ren葙xiang葳wei蒇chan蒈kai葺qi蒉kui葸xi萼e葆bao葩pa葶ting蒌lou蒎pai萱xuan葭jia蓁zhen蓍shi蓐ru蓦mo蒽en蓓bei蓊weng蒿hao蒺ji蓠li蒡bang蒹jian蒴shuo蒗lang蓥ying蓣yu蔌su甍meng蔸dou蓰xi蔹lian蔟cu蔺lin蕖qu蔻kou蓿xu蓼liao蕙hui蕈xun蕨jue蕤rui蕞zui蕺ji瞢meng蕃fan蕲qi蕻hong薤xie薨hong薇wei薏yi蕹weng薮sou薜bi薅hao薹tai薷ru薰xun藓xian藁gao藜li藿huo蘧qu蘅heng蘩fan蘖nie蘼mi廾gong弈yi夼kuang奁lian耷da奕yi奚xi奘zang匏pao尢you尥liao尬ga尴gan扌shou扪men抟tuan抻chen拊fu拚pan拗ao拮jie挢jiao拶za挹yi捋lv捃jun掭tian揶ye捱ai捺na掎ji掴guai捭bai掬ju掊pou捩lie掮qian掼guan揲die揸zha揠ya揿qin揄yu揞an揎xuan摒bing揆kui掾yuan摅shu摁en搋chuai搛jian搠shuo搌zhan搦nuo搡sang摞luo撄ying摭zhi撖han摺zhe撷xie撸lu撙zun撺cuan擀gan擐huan擗pi擤xing擢zhuo攉huo攥zuan攮nang弋yi忒te甙dai弑shi卟bu叱chi叽ji叩kou叨dao叻le吒zha吖ya吆yao呋fu呒wu呓yi呔dai呖li呃e吡bi呗bei呙guo吣qin吲yin咂za咔ka呷ga呱gu呤ling咚dong咛ning咄duo呶nao呦you咝si哐kuang咭ji哂shen咴hui哒da咧lie咦yi哓xiao哔bi呲ci咣guang哕hui咻xiu咿yi哌pai哙kuai哚duo哜ji咩mie咪mi咤zha哝nong哏gen哞mou唛ma哧chi唠lao哽geng唔wu哳zha唢suo唣zao唏xi唑zuo唧ji唪feng啧ze喏nuo喵miao啉lin啭zhuan啁zhao啕tao唿hu啐cui唼sha唷yo啖dan啵bo啶ding啷lang唳li唰shua啜chuai喋die嗒da喃nan喱li喹kui喈jie喁yong喟kui啾jiu嗖sou喑yin啻chi嗟jie喽lou喾ku喔o喙hui嗪qin嗷ao嗉su嘟du嗑ke嗫nie嗬he嗔chen嗦suo嗝ge嗄a嗯n嗥hao嗲die嗳ai嗌ai嗍suo嗨hai嗵tong嗤chi辔pei嘞lei嘈cao嘌piao嘁qi嘤ying嘣beng嗾sou嘀di嘧mi嘭peng噘jue嘹liao噗pu嘬chuai噍jiao噢o噙qin噜lu噌ceng噔deng嚆hao噤jin噱jue噫yi噻sai噼pi嚅ru嚓ca嚯huo囔nang囗wei囝jian囡nan囵lun囫hu囹ling囿you圄yu圊qing圉yu圜huan帏wei帙zhi帔pei帑tang帱chou帻ze帼guo帷wei幄wo幔man幛zhang幞fu幡fan岌ji屺qi岍qian岐qi岖qu岈ya岘xian岙ao岑cen岚lan岜ba岵hu岢ke岽dong岬jia岫xiu岱dai岣gou峁mao岷min峄yi峒dong峤jiao峋xun峥zheng崂lao崃lai崧song崦yan崮gu崤xiao崞guo崆kong崛jue嵘rong崾yao崴wai崽zai嵬wei嵛yu嵯cuo嵝lou嵫zi嵋mei嵊sheng嵩song嵴ji嶂zhang嶙lin嶝deng豳bin嶷yi巅dian彳chi彷pang徂cu徇xun徉yang後hou徕lai徙xi徜chang徨huang徭yao徵zheng徼jiao衢qu彡shan犭quan犰qiu犴an犷guang犸ma狃niu狁yun狎xia狍pao狒fei狨rong狯kuai狩shou狲sun狴bi狷juan猁li狳yu猃xian狺yin狻suan猗yi猓guo猡luo猊ni猞she猝cu猕mi猢hu猹cha猥wei猬wei猸mei猱nao獐zhang獍jing獗jue獠liao獬xie獯xun獾huan舛chuan夥huo飧sun夤yin夂zhi饣shi饧tang饨tun饩xi饪ren饫yu饬chi饴yi饷xiang饽bo馀yu馄hun馇cha馊sou馍mo馐xiu馑jin馓san馔zhuan馕nang庀pi庑wu庋gui庖pao庥xiu庠xiang庹tuo庵an庾yu庳bi赓geng廒ao廑jin廛chan廨xie廪lin膺ying忄xin忉dao忖cun忏chan怃wu忮zhi怄ou忡chong忤wu忾kai怅chang怆chuang忪song忭bian忸niu怙hu怵chu怦peng怛da怏yang怍zuo怩ni怫fu怊chao怿yi怡yi恸tong恹yan恻ce恺kai恂xun恪ke恽yun悖bei悚song悭qian悝kui悃kun悒yi悌ti悛quan惬qie悻xing悱fei惝chang惘wang惆chou惚hu悴cui愠yun愦kui愕e愣leng惴zhui愀qiao愎bi愫su慊qian慵yong憬jing憔qiao憧chong憷chu懔lin懵meng忝tian隳hui闩shuan闫yan闱wei闳hong闵min闶kang闼ta闾lv阃kun阄jiu阆lang阈yu阊chang阋xi阌wen阍hun阏e阒qu阕que阖he阗tian阙que阚han丬qiang爿pan戕qiang氵shui汔qi汜si汊cha沣feng沅yuan沐mu沔mian沌dun汨mi汩gu汴bian汶wen沆hang沩wei泐le泔gan沭shu泷long泸lu泱yang泗si沲tuo泠ling泖mao泺luo泫xuan泮pan沱tuo泓hong泯min泾jing洹huan洧wei洌lie浃jia浈zhen洇yin洄hui洙zhu洎ji洫xu浍hui洮tao洵xun洚jiang浏liu浒hu浔xun洳ru涑su浯wu涞lai涠wei浞zhuo涓juan涔cen浜bang浠xi浼mei浣huan渚zhu淇qi淅xi淞song渎du涿zhuo淠pi渑mian淦gan淝fei淙cong渖shen涫guan渌lu涮shuan渫xie湮yan湎mian湫jiao溲sou湟huang溆xu湓pen湔jian渲xuan渥wo湄mei滟yan溱qin溘ke滠she漭mang滢ying溥pu溧li溽ru溻ta溷hun滗bi溴xiu滏fu溏tang滂pang溟ming潢huang潆ying潇xiao漤lan漕cao滹hu漯luo漶huan潋lian潴zhu漪yi漉lu漩xuan澉gan澍shu澌si潸shan潲shao潼tong潺chan濑lai濉sui澧li澹dan澶chan濂lian濡ru濮pu濞bi濠hao濯zhuo瀚han瀣xie瀛ying瀹yue瀵fen灏hao灞ba宀mian宄gui宕dang宓mi宥you宸chen甯ning骞qian搴qian寤wu寮liao褰qian寰huan蹇jian謇jian辶chuo迓ya迕wu迥jiong迮ze迤yi迩er迦jia迳jing迨dai逅hou逄pang逋bu逦li逑qiu逍xiao逖ti逡qun逵kui逶wei逭huan逯lu遄chuan遑huang遒qiu遐xia遨ao遘gou遢ta遛liu暹xian遴lin遽ju邂xie邈miao邃sui邋la彐ji彗hui彖tuan彘zhi尻kao咫zhi屐ji屙e孱can屣xi屦ju羼chan弪jing弩nu弭mi艴fu弼bi鬻yu屮che妁shuo妃fei妍yan妩wu妪yu妣bi妗jin姊zi妫gui妞niu妤yu姒si妲da妯zhou姗shan妾qie娅ya娆rao姝shu娈luan姣jiao姘pin姹cha娌li娉ping娲wa娴xian娑suo娣di娓wei婀e婧jing婊biao婕jie娼chang婢bi婵chan胬nu媪ao媛yuan婷ting婺wu媾gou嫫mo媲pi嫒ai嫔pin媸chi嫠li嫣yan嫱qiang嫖piao嫦chang嫘lei嫜zhang嬉xi嬗shan嬖bi嬲niao嬷ma孀shuang尕ga尜ga孚fu孥nu孳zi孑jie孓jue孢bao驵zang驷si驸fu驺zou驿yi驽nu骀dai骁xiao骅hua骈pian骊li骐qi骒ke骓zhui骖can骘zhi骛wu骜ao骝liu骟shan骠biao骢cong骣chan骥ji骧xiang纟si纡yu纣zhou纥ge纨wan纩kuang纭yun纰pi纾shu绀gan绁xie绂fu绉zhou绋fu绌chu绐dai绔ku绗hang绛jiang绠geng绡xiao绨ti绫ling绮qi绯fei绱shang绲gun缍duo绶shou绺liu绻quan绾wan缁zi缂ke缃xiang缇ti缈miao缋hui缌si缏bian缑gou缒zhui缗min缙jin缜zhen缛ru缟gao缡li缢yi缣jian缤bin缥piao缦man缧lei缪mou缫sao缬xie缭liao缯zeng缰jiang缱qian缲qiao缳huan缵zuan幺yao畿ji巛chuan甾zai邕yong玎ding玑ji玮wei玢bin玟wen珏jue珂ke珑long玷dian玳dai珀po珉min珈jia珥er珙gong顼xu琊ya珩hang珧yao珞luo玺xi珲hui琏lian琪qi瑛ying琦qi琥hu琨kun琰yan琮cong琬wan琛chen琚ju瑁mao瑜yu瑗yuan瑕xia瑙nao瑷ai瑭tang瑾jin璜huang璎ying璀cui璁cong璇xuan璋zhang璞pu璨can璩qu璐lu璧bi瓒zan璺wen韪wei韫yun韬tao杌wu杓biao杞qi杈cha杩ma枥li枇pi杪miao杳yao枘rui枧jian杵chu枨cheng枞cong枭xiao枋fang杷pa杼zhu柰nai栉zhi柘zhe栊long柩jiu枰ping栌lu柙xia枵xiao柚you枳zhi柝tuo栀zhi柃ling枸gou柢di栎li柁duo柽cheng栲kao栳lao桠ya桡rao桎zhi桢zhen桄guang桤qi梃ting栝gua桕jiu桦hua桁heng桧gui桀jie栾luan桊juan桉an栩xu梵fan梏gu桴fu桷jue梓zi桫suo棂ling楮chu棼fen椟du椠qian棹zhao椤luo棰chui椋liang椁guo楗jian棣di椐ju楱zou椹shen楠nan楂zha楝lian榄lan楫ji榀pin榘ju楸qiu椴duan槌chui榇chen榈lv槎cha榉ju楦xuan楣mei楹ying榛zhen榧fei榻ta榫sun榭xie槔gao榱cui槁gao槊shuo槟bin榕rong槠zhu榍xie槿jin樯qiang槭qi樗chu樘tang橥zhu槲hu橄gan樾yue檠qing橐tuo橛jue樵qiao檎qin橹lu樽zun樨xi橘ju橼yuan檑lei檐yan檩lin檗bo檫cha猷you獒ao殁mo殂cu殇shang殄tian殒yun殓lian殍piao殚dan殛ji殡bin殪yi轫ren轭e轱gu轲ke轳lu轵zhi轶yi轸zhen轷hu轹li轺yao轼shi轾zhi辁quan辂lu辄zhe辇nian辋wang辍chuo辎zi辏cou辘lu辚lin軎wei戋jian戗qiang戛jia戟ji戢ji戡kan戥deng戤gai戬jian臧zang瓯ou瓴ling瓿bu甏beng甑zeng甓pi攴pu旮ga旯la旰gan昊hao昙tan杲gao昃ze昕xin昀yun炅jiong曷he昝zan昴mao昱yu昶chang昵ni耆qi晟cheng晔ye晁chao晏yan晖hui晡bu晗han晷gui暄xuan暌kui暧ai暝ming暾tun曛xun曜yao曦xi曩nang贲ben贳shi贶kuang贻yi贽zhi赀zi赅gai赆jin赈zhen赉lai赇qiu赍ji赕dan赙fu觇chan觊ji觋xi觌di觎yu觏gou觐jin觑qu牮jian犟jiang牝pin牦mao牯gu牾wu牿gu犄ji犋ju犍jian犏pian犒kao挈qie挲sa掰bai搿ge擘bai耄mao毪mu毳cui毽jian毵san毹shu氅chang氇lu氆pu氍qu氕pie氘dao氙xian氚chuan氡dong氩ya氤yin氪ke氲yun攵pu敕chi敫jiao牍du牒die牖you爰yuan虢guo刖yue肟wo肜rong肓huang肼jing朊ruan肽tai肱gong肫zhun肭na肴yao肷qian胧long胨dong胩ka胪lu胛jia胂shen胄zhou胙zuo胍gua胗zhen朐qu胝zhi胫jing胱guang胴dong胭yan脍kuai脎sa胲hai胼pian朕zhen脒mi豚tun脶luo脞cuo脬pao脘wan脲niao腈jing腌yan腓fei腴yu腙zong腚ding腱jian腠cou腩nan腼mian腽wa腭e腧shu塍cheng媵ying膈ge膂lv膑bin滕teng膣zhi膪chuai臌gu朦meng臊sao膻shan臁lian膦lin欤yu欷xi欹yi歃sha歆xin歙she飑biao飒sa飓ju飕sou飙biao飚biao殳shu彀gou毂gu觳hu斐fei齑ji斓lan於yu旆pei旄mao旃zhan旌jing旎ni旒liu旖yi炀yang炜wei炖dun炝qiang炻shi烀hu炷zhu炫xuan炱tai烨ye烊yang焐wu焓han焖men焯chao焱yan煳hu煜yu煨wei煅duan煲bao煊xuan煸bian煺tui熘liu熳man熵shang熨yun熠yi燠yu燔fan燧sui燹xian爝jue爨cuan灬biao焘dao煦xu熹xi戾li戽hu扃jiong扈hu扉fei礻shi祀si祆xian祉zhi祛qu祜hu祓fu祚zuo祢mi祗zhi祠ci祯zhen祧tiao祺qi禅chan禊xi禚zhuo禧xi禳rang忑te忐tan怼dui恝jia恚hui恧nv恁nen恙yang恣zi悫que愆qian愍min慝te憩qi憝dui懋mao懑men戆gang肀yu聿yu沓da泶xue淼miao矶ji矸gan砀dang砉huo砗che砘dun砑ya斫zhuo砭bian砜feng砝fa砹ai砺li砻long砟zha砼tong砥di砬la砣tuo砩fu硎xing硭mang硖xia硗qiao砦zhai硐dong硇nao硌ge硪wo碛qi碓dui碚bei碇ding碜chen碡du碣jie碲di碹xuan碥bian磔zhe磙gun磉sang磬qing磲qu礅dun磴deng礓jiang礤ca礞meng礴bo龛kan黹zhi黻fu黼fu盱xu眄mian眍kou盹dun眇miao眈dan眚sheng眢yuan眙yi眭sui眦zi眵chi眸mou睐lai睑jian睇di睃suo睚ya睨ni睢sui睥pi睿rui瞍sou睽kui瞀mao瞌ke瞑ming瞟piao瞠cheng瞰kan瞵lin瞽gu町ting畀bi畎quan畋tian畈fan畛zhen畲she畹wan疃tuan罘fu罡gang罟gu詈li罨yan罴pi罱lan罹li羁ji罾zeng盍he盥guan蠲juan钅jin钆ga钇yi钋po钊zhao钌liao钍tu钏chuan钐shan钔men钗chai钕nv钚bu钛tai钜ju钣ban钤qian钫fang钪kang钭tou钬huo钯ba钰yu钲zheng钴gu钶ke钷po钸bu钹bo钺yue钼mu钽tan钿dian铄shuo铈shi铉xuan铊ta铋bi铌ni铍pi铎duo铐kao铑lao铒er铕you铖cheng铗jia铙nao铘ye铛dang铞diao铟yin铠kai铢zhu铤ding铥diu铧hua铨quan铪ha铩sha铫diao铮zheng铯se铳chong铴tang铵an铷ru铹lao铼lai铽te铿keng锃zeng锂li锆gao锇e锉cuo锊lve锍liu锎kai锏jian锒lang锓qin锔ju锕a锖qiang锘nuo锛ben锝de锞ke锟kun锢gu锪huo锫pei锩juan锬tan锱zi锲qie锴kai锶si锷e锸cha锼sou锾huan锿ai镂lou锵qiang镄fei镅mei镆mo镉ge镌juan镎na镏liu镒yi镓jia镔bin镖biao镗tang镘man镙luo镛yong镞zu镟xuan镝di镡chan镢jue镤pu镥lu镦dui镧lan镨pu镩cuan镪qiang镫deng镬huo镯zhuo镱yi镲cha镳biao锺zhong矧shen矬cuo雉zhi秕bi秭zi秣mo秫shu稆lv嵇ji稃fu稂lang稞ke稔ren稹zhen稷ji穑se黏nian馥fu穰rang皈gui皎jiao皓hao皙xi皤po瓞die瓠hu甬yong鸠jiu鸢yuan鸨bao鸩zhen鸪gu鸫dong鸬lu鸲qu鸱chi鸶si鸸er鸷zhi鸹gua鸺xiu鸾luan鹁bo鹂li鹄gu鹆yu鹇xian鹈ti鹉wu鹋miao鹌an鹎bei鹑chun鹕hu鹗e鹚ci鹛mei鹜wu鹞yao鹣jian鹦ying鹧zhe鹨liu鹩liao鹪jiao鹫jiu鹬yu鹱hu鹭lu鹳guan疒ne疔ding疖jie疠li疝shan疬li疣you疳gan疴ke疸dan痄zha疱pao疰zhu痃xuan痂jia痖ya痍yi痣zhi痨lao痦wu痤cuo痫xian痧sha瘃zhu痱fei痼gu痿wei瘐yu瘀yu瘅dan瘌la瘗yi瘊hou瘥chai瘘lou瘕jia瘙sao瘛chi瘼mo瘢ban瘠ji癀huang瘭biao瘰luo瘿ying瘵zhai癃long瘾yin瘳chou癍ban癞lai癔yi癜dian癖pi癫dian癯qu翊yi竦song穸xi穹qiong窀zhun窆bian窈yao窕tiao窦dou窠ke窬yu窨xun窭ju窳yu衤yi衩cha衲na衽ren衿jin袂mei袢pan裆dang袷jia袼ge裉ken裢lian裎cheng裣lian裥jian裱biao褚chu裼ti裨bi裾ju裰duo褡da褙bei褓bao褛lv褊bian褴lan褫chi褶zhe襁qiang襦ru襻pan疋pi胥xu皲jun皴cun矜jin耒lei耔zi耖chao耜si耠huo耢lao耥tang耦ou耧lou耩jiang耨nou耱mo耋die耵ding聃dan聆ling聍ning聒gua聩kui聱ao覃tan顸han颀qi颃hang颉jie颌he颍ying颏ke颔han颚e颛zhuan颞nie颟man颡sang颢hao颥ru颦pin虍hu虔qian虬qiu虮ji虿chai虺hui虼ge虻meng蚨fu蚍pi蚋rui蚬xian蚝hao蚧jie蚣gong蚪dou蚓yin蚩chi蚶han蛄gu蚵he蛎li蚰you蚺ran蚱zha蚯qiu蛉ling蛏cheng蚴you蛩qiong蛱jia蛲nao蛭zhi蛳si蛐qu蜓ting蛞kuo蛴qi蛟jiao蛘yang蛑mou蜃shen蜇zhe蛸shao蜈wu蜊li蜍chu蜉fu蜣qiang蜻qing蜞qi蜥xi蜮yu蜚fei蜾guo蝈guo蜴yi蜱pi蜩tiao蜷quan蜿wan螂lang蜢meng蝽chun蝾rong蝻nan蝠fu蝰kui蝌ke蝮fu螋sou蝓yu蝣you蝼lou蝤qiu蝙bian蝥mao螓qin螯ao螨man蟒mang蟆ma螈yuan螅xi螭chi螗tang螃pang螫shi蟥huang螬cao螵piao螳tang蟋xi蟓xiang螽zhong蟑zhang蟀shuai蟊mao蟛peng蟪hui蟠pan蟮shan蠖huo蠓meng蟾chan蠊lian蠛mie蠡li蠹du蠼qu缶fou罂ying罄qing罅xia舐shi竺zhu竽yu笈ji笃du笄ji笕jian笊zhao笫zi笏hu筇qiong笸po笪da笙sheng笮ze笱gou笠li笥si笤tiao笳jia笾bian笞chi筘kou筚bi筅xian筵yan筌quan筝zheng筠yun筮shi筻gang筢pa筲shao筱xiao箐qing箦ze箧qie箸zhu箬ruo箝qian箨tuo箅bi箪dan箜kong箢yuan箫xiao箴zhen篑kui篁huang篌hou篝gou篚fei篥li篦bi篪chi簌su篾mie篼dou簏lu簖duan簋gui簟dian簪zan簦deng簸bo籁lai籀zhou臾yu舁yu舂chong舄xi臬nie衄nv舡chuan舢shan舣yi舭bi舯zhong舨ban舫fang舸ge舻lu舳zhu舴ze舾xi艄shao艉wei艋meng艏shou艚cao艟chong艨meng衾qin袅niao袈jia裘qiu裟sha襞bi羝di羟qiang羧suo羯jie羰tang羲xi籼xian敉mi粑ba粝li粜tiao粞xi粢zi粲can粼lin粽zong糁san糇hou糌zan糍ci糈xu糅rou糗qiu糨jiang艮gen暨ji羿yi翎ling翕xi翥zhu翡fei翦jian翩pian翮he翳yi糸mi絷zhi綦qi綮qi繇yao纛dao麸fu麴qu赳jiu趄ju趔lie趑zi趱zan赧nan赭zhe豇jiang豉shi酊ding酐gan酎zhou酏yi酤gu酢cu酡tuo酰xian酩ming酯zhi酽yan酾shai酲cheng酴tu酹lei醌kun醅pei醐hu醍ti醑xu醢hai醣tang醪lao醭bu醮jiao醯xi醵ju醴li醺xun豕shi鹾cuo趸dun跫qiong踅xue蹙cu蹩bie趵bao趿ta趼jian趺fu跄qiang跖zhi跗fu跚shan跞li跎tuo跏jia跛bo跆tai跬kui跷qiao跸bi跣xian跹xian跻ji跤jiao踉liang跽ji踔chuo踝huai踟chi踬zhi踮dian踣bo踯zhi踺jian蹀die踹chuai踵zhong踽ju踱duo蹉cuo蹁pian蹂rou蹑nie蹒pan蹊qi蹰chu蹶jue蹼pu蹯fan蹴cu躅zhu躏lin躔chan躐lie躜zuan躞xie豸zhi貂diao貊mo貅xiu貘mo貔pi斛hu觖jue觞shang觚gu觜zi觥gong觫su觯zhi訾zi謦qing靓jing雩yu雳li雯wen霆ting霁ji霈pei霏fei霎sha霪yin霭ai霰xian霾mai龀chen龃ju龅bao龆tiao龇zi龈ken龉yu龊chuo龌wo黾min鼋yuan鼍tuo隹zhui隼sun隽juan雎ju雒luo瞿qu雠chou銎qiong銮luan鋈wu錾zan鍪mou鏊ao鎏liu鐾bei鑫xin鱿you鲂fang鲅ba鲆ping鲇nian鲈lu稣su鲋fu鲎hou鲐tai鲑gui鲒jie鲔wei鲕er鲚ji鲛jiao鲞xiang鲟xun鲠geng鲡li鲢lian鲣jian鲥shi鲦tiao鲧gun鲨sha鲩huan鲫ji鲭qing鲮ling鲰zou鲱fei鲲kun鲳chang鲴gu鲵ni鲶nian鲷diao鲺shi鲻zi鲼fen鲽die鳄e鳅qiu鳆fu鳇huang鳊bian鳋sao鳌ao鳍qi鳎ta鳏guan鳐yao鳓le鳔biao鳕xue鳗man鳘min鳙yong鳜gui鳝shan鳟zun鳢li靼da鞅yang鞑da鞒qiao鞔man鞯jian鞫ju鞣rou鞲gou鞴bei骱jie骰tou骷ku鹘gu骶di骺hou骼ge髁ke髀bi髅lou髂qia髋kuan髌bin髑du魅mei魃ba魇yan魉liang魈xiao魍wang魑chi飨xiang餍yan餮tie饕tao饔yong髟biao髡kun髦mao髯ran髫tiao髻ji髭zi髹xiu鬈quan鬏jiu鬓bin鬟huan鬣lie麽mo麾hui縻mi麂ji麇jun麈zhu麋mi麒qi鏖ao麝she麟lin黛dai黜chu黝you黠xia黟yi黢qu黩du黧li黥qing黪can黯an鼢fen鼬you鼯wu鼹yan鼷xi鼽qiu鼾han齄zha";</script>
+<script>
+/* ============================================================
+   词库工作台 — 单文件离线工具
+   ============================================================ */
+
+/* ---------- 拼音表 ---------- */
+var PY = (function(){
+  var m = Object.create(null), s = PY_TABLE_RAW, i = 0, n = s.length;
+  while (i < n) {
+    var ch = s[i++], j = i;
+    while (j < n && s.charCodeAt(j) < 128) j++;
+    if (j > i) m[ch] = s.slice(i, j);
+    i = j;
+  }
+  return m;
+})();
+
+var CJK = /[\u4e00-\u9fff]/;
+
+/* 多音字词组修正表（词组级，按最长匹配生效）——覆盖常见地名、姓氏、易错词 */
+var WORD_PY = {
+  '重庆':'chong qing','重复':'chong fu','重新':'chong xin','重量':'zhong liang','重要':'zhong yao',
+  '长沙':'chang sha','长春':'chang chun','长度':'chang du','长期':'chang qi','长大':'zhang da',
+  '长辈':'zhang bei','长老':'zhang lao','校长':'xiao zhang','增长':'zeng zhang','成长':'cheng zhang',
+  '银行':'yin hang','行业':'hang ye','行长':'hang zhang','行程':'xing cheng','行走':'xing zou',
+  '行为':'xing wei','举行':'ju xing','发行':'fa xing','行列':'hang lie',
+  '音乐':'yin yue','乐队':'yue dui','乐器':'yue qi','快乐':'kuai le','乐曲':'yue qu',
+  '厦门':'xia men','大厦':'da sha',
+  '朝阳':'chao yang','朝向':'chao xiang','朝代':'chao dai','唐朝':'tang chao',
+  '会计':'kuai ji','会议':'hui yi','议会':'yi hui','计划':'ji hua',
+  '传说':'chuan shuo','传记':'zhuan ji','自传':'zi zhuan','水浒传':'shui hu zhuan',
+  '便宜':'pian yi','方便':'fang bian','便利':'bian li','大便':'da bian',
+  '角色':'jue se','角度':'jiao du','角落':'jiao luo','角逐':'jue zhu','主角':'zhu jue',
+  '数学':'shu xue','数量':'shu liang','数据':'shu ju','次数':'ci shu',
+  '中奖':'zhong jiang','中间':'zhong jian','中国':'zhong guo','中央':'zhong yang',
+  '大夫':'dai fu','藏族':'zang zu','西藏':'xi zang','收藏':'shou cang','宝藏':'bao zang',
+  '曾经':'ceng jing','供给':'gong ji','给予':'ji yu','供应':'gong ying',
+  '冠军':'guan jun','皇冠':'huang guan','冠心病':'guan xin bing',
+  '荷花':'he hua','负荷':'fu he','荷叶':'he ye',
+  '看见':'kan jian','看守':'kan shou','看护':'kan hu','照看':'zhao kan',
+  '提防':'di fang','提高':'ti gao','提供':'ti gong','提醒':'ti xing',
+  '朝鲜':'chao xian','新鲜':'xin xian','鲜明':'xian ming',
+  '血液':'xue ye','血压':'xue ya','流血':'liu xue',
+  '应该':'ying gai','应用':'ying yong','响应':'xiang ying','答应':'da ying','应急':'ying ji',
+  '载重':'zai zhong','记载':'ji zai','下载':'xia zai','装载':'zhuang zai',
+  '相处':'xiang chu','处理':'chu li','到处':'dao chu','相处':'xiang chu',
+  '种子':'zhong zi','种类':'zhong lei','种植':'zhong zhi','播种':'bo zhong',
+  '觉察':'jue cha','睡觉':'shui jiao','觉得':'jue de','感觉':'gan jue',
+  '出差':'chu chai','差别':'cha bie','相差':'xiang cha','差不多':'cha bu duo',
+  '折扣':'zhe kou','折断':'zhe duan','折腾':'zhe teng','打折':'da zhe',
+  '秘密':'mi mi','秘书':'mi shu','便秘':'bian mi',
+  '宁夏':'ning xia','宁可':'ning ke','安宁':'an ning',
+  '店铺':'dian pu','铺路':'pu lu','床铺':'chuang pu',
+  '咽喉':'yan hou','咽下':'yan xia',
+  '亲切':'qin qie','一切':'yi qie','切开':'qie kai',
+  '缴纳':'jiao na','缴费':'jiao fei',
+  '露面':'lou mian','露水':'lu shui','暴露':'bao lu',
+  '峡谷':'xia gu','姓':'xing',
+  '系统':'xi tong','联系':'lian xi','关系':'guan xi',
+  '医生':'yi sheng','医院':'yi yuan','中医':'zhong yi',
+  '代表':'dai biao','代理':'dai li','时代':'shi dai',
+  '开会':'kai hui','会见':'hui jian',
+  '当心':'dang xin','当时':'dang shi','上当':'shang dang',
+  '还有':'hai you','归还':'gui huan','还清':'huan qing',
+  '衣服':'yi fu','说服':'shuo fu','服装':'fu zhuang',
+  '困难':'kun nan','难过':'nan guo','灾难':'zai nan',
+  '回复':'hui fu','复兴':'fu xing','复杂':'fu za',
+  '漂亮':'piao liang','漂流':'piao liu',
+  '参加':'can jia','人参':'ren shen','参考':'can kao',
+  '冠军赛':'guan jun sai','首都':'shou du','都是':'dou shi',
+  '角落头':'jiao luo tou','露脸':'lou lian',
+  '折腾人':'zhe teng ren','折扇':'zhe shan',
+  '掉色':'diao shai','颜色':'yan se','色彩':'se cai',
+  '的确':'di que','目的':'mu di','的士':'di shi',
+  '发觉':'fa jue','睡眠':'shui mian',
+  '胖子':'pang zi','心宽体胖':'xin kuan ti pan',
+  '糊涂':'hu tu','粘稠':'nian chou','粘贴':'zhan tie',
+  '屏幕':'ping mu','屏住':'bing zhu','屏障':'ping zhang',
+  '强迫':'qiang po','勉强':'mian qiang','强大':'qiang da',
+  '弯曲':'wan qu','歌曲':'ge qu','曲折':'qu zhe',
+  '圈养':'juan yang','圆圈':'yuan quan',
+  '系鞋带':'ji xie dai',
+  '咽喉炎':'yan hou yan','呜咽':'wu ye',
+  '应变':'ying bian','应付':'ying fu'
+};
+
+/* 汉字 -> 音节数组 */
+function pinyinSyllables(text){
+  var out = [], i = 0, n = text.length;
+  while (i < n){
+    var hit = null, hl = 0, maxL = Math.min(6, n - i);
+    for (var L = maxL; L >= 2; L--){
+      var sub = text.substr(i, L);
+      if (WORD_PY[sub]){ hit = WORD_PY[sub].split(' '); hl = L; break; }
+    }
+    if (hit){
+      for (var k = 0; k < hit.length; k++) out.push(hit[k]);
+      i += hl;
+      continue;
+    }
+    var ch = text[i];
+    if (PY[ch]) out.push(PY[ch]);
+    else if (/[a-zA-Z0-9]/.test(ch)) out.push(ch.toLowerCase());
+    i++;
+  }
+  return out;
+}
+
+function pyInitials(str){
+  return pinyinSyllables(str).map(function(s){ return s[0]; }).join('');
+}
+function pyFull(str){
+  return pinyinSyllables(str).join('');
+}
+/* 短语 -> 基础输入码 */
+function baseCode(phrase, mode){
+  var s = (phrase || '').trim();
+  if (!s) return '';
+  var t = s.replace(/[\s\u3000]+/g, ' ').trim();
+  var first = t.split(' ')[0];
+  if (mode === 'full') return pyFull(t).slice(0, 14);
+  return pyInitials(first).slice(0, 14);
+}
+/* 只保留 ASCII 字母数字，iOS 输入码里放中文/符号会有各种怪问题 */
+function sanitizeCode(c){
+  return (c || '').replace(/[^a-zA-Z0-9\/;@#_\-]/g, '');
+}
+
+/* ---------- 状态 ---------- */
+var uid = 0;
+function nid(){ return 'w' + (++uid) + '_' + Date.now().toString(36); }
+
+var App = {};
+App.words = [];
+App.cfg = { mode:'initial', prefix:'', maxlen:5, batch:500 };
+App.filter = '';
+App.del = new Set();   // 建议删除/合并的 id
+
+/* ---------- 持久化 ---------- */
+function lsGet(k, d){ try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }
+function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+
+App.persist = function(){
+  lsSet('wv.words', App.words);
+  lsSet('wv.cfg', App.cfg);
+};
+App.load = function(){
+  App.words = lsGet('wv.words', []) || [];
+  var c = lsGet('wv.cfg', null);
+  if (c) App.cfg = Object.assign(App.cfg, c);
+  // 迁移：补 id
+  App.words.forEach(function(w){ if (!w.id) w.id = nid(); });
+  var $ = function(id){ return document.getElementById(id); };
+  $('sMode').value = App.cfg.mode;
+  $('sPrefix').value = App.cfg.prefix;
+  $('sMaxLen').value = App.cfg.maxlen;
+  $('sBatch').value = App.cfg.batch;
+};
+App.saveCfg = function(){
+  App.cfg.mode   = document.getElementById('sMode').value;
+  App.cfg.prefix = document.getElementById('sPrefix').value;
+  App.cfg.maxlen = parseInt(document.getElementById('sMaxLen').value, 10) || 5;
+  App.cfg.batch  = parseInt(document.getElementById('sBatch').value, 10) || 500;
+  App.persist();
+};
+
+/* ---------- 渲染 ---------- */
+App.render = function(){
+  var tb = document.getElementById('tb');
+  var q = (document.getElementById('q').value || '').trim().toLowerCase();
+  var list = App.words.filter(function(w){
+    if (!q) return true;
+    return (w.phrase || '').toLowerCase().indexOf(q) >= 0 ||
+           (w.code || '').toLowerCase().indexOf(q) >= 0;
+  });
+
+  var html = '';
+  for (var i = 0; i < list.length; i++){
+    var w = list[i];
+    var bad = App.del.has(w.id);
+    html += '<tr class="' + (w.on ? '' : 'off') + '">' +
+      '<td class="c-chk"><input type="checkbox" ' + (w.on ? 'checked' : '') +
+        ' onchange="App.toggle(\'' + w.id + '\',this.checked)"></td>' +
+      '<td><input type="text" value="' + escAttr(w.phrase) + '" placeholder="要插入的完整内容" ' +
+        'oninput="App.edit(\'' + w.id + '\',\'phrase\',this.value)"></td>' +
+      '<td class="c-code"><input type="text" value="' + escAttr(w.code) + '" placeholder="必填" ' +
+        (bad ? 'class="hl" ' : '') +
+        'oninput="App.edit(\'' + w.id + '\',\'code\',this.value)"></td>' +
+      '<td class="c-cat"><input type="text" value="' + escAttr(w.cat || '') + '" list="cats" ' +
+        'oninput="App.edit(\'' + w.id + '\',\'cat\',this.value)"></td>' +
+      '<td class="c-act"><button class="xbtn" onclick="App.delRow(\'' + w.id + '\')" title="删除">×</button></td>' +
+      '</tr>';
+  }
+  tb.innerHTML = html;
+  document.getElementById('empty').style.display = App.words.length ? 'none' : 'block';
+  if (App.words.length && !list.length){
+    tb.innerHTML = '<tr><td colspan="5" class="empty">没有匹配的词条</td></tr>';
+  }
+  App.stats();
+};
+function escAttr(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+App.stats = function(){
+  var total = App.words.length;
+  var on = App.words.filter(function(w){ return w.on; }).length;
+  var noCode = App.words.filter(function(w){ return w.on && !(w.code||'').trim(); }).length;
+  var codes = {}, dup = 0;
+  App.words.forEach(function(w){
+    if (!w.on) return;
+    var c = (w.code||'').trim().toLowerCase();
+    if (!c) return;
+    if (codes[c]) dup++; else codes[c] = 1;
+  });
+  var s = '<span class="chip">总 <b>' + total + '</b></span>' +
+          '<span class="chip">启用 <b>' + on + '</b></span>' +
+          (noCode ? '<span class="chip bad">缺输入码 <b>' + noCode + '</b></span>' : '') +
+          (dup ? '<span class="chip bad">重复 <b>' + dup + '</b></span>' :
+                 (total ? '<span class="chip good">无冲突 <b>✓</b></span>' : ''));
+  document.getElementById('stats').innerHTML = s;
+};
+
+/* ---------- 增删改 ---------- */
+App.addRow = function(){
+  var w = { id: nid(), phrase:'', code:'', cat:'自定义', on:true };
+  App.words.unshift(w);
+  App.persist(); App.render();
+  var inp = document.querySelector('#tb tr:first-child td:nth-child(2) input');
+  if (inp) inp.focus();
+};
+App.delRow = function(id){
+  App.words = App.words.filter(function(w){ return w.id !== id; });
+  App.persist(); App.render();
+};
+App.toggle = function(id, v){
+  var w = App.words.find(function(x){ return x.id === id; });
+  if (w){ w.on = v; App.persist(); App.render(); }
+};
+App.edit = function(id, k, v){
+  var w = App.words.find(function(x){ return x.id === id; });
+  if (!w) return;
+  w[k] = v;
+  App.persist(); App.stats();
+};
+App.clearAll = function(){
+  if (!App.words.length) return;
+  if (!confirm('确定清空全部 ' + App.words.length + ' 条词条？此操作不可撤销。')) return;
+  App.words = []; App.del.clear(); App.persist(); App.render();
+};
+
+/* ---------- 生成输入码 ---------- */
+function nextFreeCode(base, used){
+  base = base || 'w';
+  if (!used[base]) return base;
+  var i = 2;
+  while (used[base + i]) i++;
+  return base + i;
+}
+App.genAllCodes = function(){
+  var used = Object.create(null);
+  var n = 0;
+  // 先登记已有输入码
+  App.words.forEach(function(w){
+    var c = (w.code||'').trim().toLowerCase();
+    if (c) used[c] = 1;
+  });
+  App.words.forEach(function(w){
+    if (!w.on) return;
+    if ((w.code||'').trim()) return;
+    var base = App.cfg.prefix + baseCode(w.phrase, App.cfg.mode);
+    if (!base) return;
+    if (base.length > App.cfg.maxlen) base = base.slice(0, App.cfg.maxlen);
+    var c = nextFreeCode(base, used);
+    w.code = c; used[c] = 1; n++;
+  });
+  App.persist(); App.render();
+  App.toast(n ? '已为 ' + n + ' 条生成输入码' : '没有需要生成的输入码');
+};
+
+/* ---------- 体检 + 修复 ---------- */
+App.check = function(){
+  var out = [], errs = 0, warns = 0;
+  var total = App.words.length;
+  if (!total) { App.toast('词库是空的'); return; }
+
+  var byCode = {};
+  App.words.forEach(function(w){
+    var c = (w.code||'').trim().toLowerCase();
+    if (c) (byCode[c] = byCode[c] || []).push(w);
+  });
+
+  Object.keys(byCode).forEach(function(c){
+    if (byCode[c].length > 1){
+      errs++;
+      out.push({ t:'e', m:'输入码 <b>' + c + '</b> 重复 ' + byCode[c].length + ' 次 — 系统只会生效第一条，其余的等于白设。' });
+    }
+  });
+
+  var noCode = App.words.filter(function(w){ return w.on && !(w.code||'').trim(); });
+  if (noCode.length){
+    errs++;
+    out.push({ t:'e', m:'<b>' + noCode.length + ' 条</b>没有输入码 — iOS 的「文本替换」必须同时有短语和输入码，没有输入码的条目录不进去也不需要录。' });
+  }
+
+  var shortCode = App.words.filter(function(w){
+    var c = (w.code||'').trim();
+    return w.on && c && c.length < 2 && !/^[\/;@#]/.test(c);
+  });
+  if (shortCode.length){
+    warns++;
+    out.push({ t:'w', m:'<b>' + shortCode.length + ' 条</b>输入码只有 1 个字符，打字时极易误触发。建议加前缀（如 <code>/d</code>）或换 2 个以上字母。' });
+  }
+
+  var longCode = App.words.filter(function(w){
+    return w.on && (w.code||'').trim().length > App.cfg.maxlen;
+  });
+  if (longCode.length){
+    warns++;
+    out.push({ t:'w', m:'<b>' + longCode.length + ' 条</b>输入码超过 ' + App.cfg.maxlen + ' 个字符，输入成本可能已经高于直接打字。' });
+  }
+
+  var shortPhrase = App.words.filter(function(w){
+    return w.on && (w.phrase||'').trim().length > 0 && (w.phrase||'').trim().length < 3;
+  });
+  if (shortPhrase.length){
+    warns++;
+    out.push({ t:'w', m:'<b>' + shortPhrase.length + ' 条</b>短语短于 3 个字。这么短的内容直接打更快，却占用了输入码位。' });
+  }
+
+  var multi = App.words.filter(function(w){ return /\n/.test(w.phrase || ''); });
+  if (multi.length){
+    warns++;
+    out.push({ t:'w', m:'<b>' + multi.length + ' 条</b>短语含换行。macOS 端可以导入多行，但 iPhone 上无法编辑这类条目，只能删除。' });
+    }
+
+  if (total > 800){
+    warns++;
+    out.push({ t:'i', m:'共 <b>' + total + '</b> 条，数量偏多。条目越多 iCloud 同步越慢，键盘候选栏也会变乱。建议精简到 300~1000 条的核心高频内容，或使用「分批导出」。' });
+  }
+
+  var sp = App.words.filter(function(w){ return /[<>&]/.test(w.phrase || ''); });
+  if (sp.length){
+    out.push({ t:'i', m:'<b>' + sp.length + ' 条</b>短语含 <code>&lt; &gt; &amp;</code> 特殊字符 — 导出时已自动做 XML 转义，可正常导入。' });
+  }
+
+  var panel = document.getElementById('issuePanel');
+  document.getElementById('issueTitle').textContent =
+    errs ? ('检查结果：' + errs + ' 个必须修，' + warns + ' 个建议改')
+         : (warns ? ('检查结果：' + warns + ' 个建议' ) : '检查结果：没有发现问题 ✓');
+
+  var ic = { e:'●', w:'▲', i:'◆' };
+  document.getElementById('issues').innerHTML = out.length
+    ? out.map(function(o){
+        return '<div class="issue ' + o.t + '"><span class="ic">' + ic[o.t] + '</span><span class="tx">' + o.m + '</span></div>';
+      }).join('')
+    : '<div class="issue i"><span class="ic">✓</span><span class="tx">词库很干净，可以直接导出。</span></div>';
+  panel.style.display = 'block';
+};
+
+App.fixAll = function(){
+  var used = Object.create(null), del = 0, add = 0;
+  // 1) 已有输入码 -> 重复的加序号
+  App.words.forEach(function(w){
+    var c = (w.code||'').trim().toLowerCase();
+    if (!c) return;
+    if (!used[c]) { used[c] = 1; return; }
+    var i = 2;
+    while (used[c + i]) i++;
+    var nc = c + i;
+    w.code = nc; used[nc] = 1; del++;
+  });
+  // 2) 补齐空输入码
+  App.words.forEach(function(w){
+    if (!w.on || (w.code||'').trim()) return;
+    var base = App.cfg.prefix + baseCode(w.phrase, App.cfg.mode);
+    if (!base){ w.on = false; return; }
+    if (base.length > App.cfg.maxlen) base = base.slice(0, App.cfg.maxlen);
+    var c = nextFreeCode(base, used);
+    w.code = c; used[c] = 1; add++;
+  });
+  App.persist(); App.render(); App.check();
+  App.toast('修复完成：' + add + ' 条补了输入码，' + del + ' 条去重');
+};
+
+/* ---------- 导入 ---------- */
+App.openImport = function(){
+  document.getElementById('mImport').classList.add('on');
+  setTimeout(function(){ document.getElementById('impText').focus(); }, 60);
+};
+App.close = function(id){ document.getElementById(id).classList.remove('on'); };
+
+App.doImport = function(){
+  var raw = document.getElementById('impText').value || '';
+  var autoCode = document.getElementById('impAutoCode').checked;
+  var replace  = document.getElementById('impReplace').checked;
+
+  var lines = raw.split(/\r?\n/);
+  var items = [];
+
+  lines.forEach(function(ln){
+    var t = ln.trim();
+    if (!t) return;
+    if (/^\|[\s:|-]+\|?$/.test(t)) return;           // md 分隔行
+    if (/^\|/.test(t)) {                              // md 表格行
+      var cells = t.replace(/^\||\|$/g, '').split('|').map(function(x){ return x.trim(); });
+      if (!cells.length) return;
+      if (/^(输入码|shortcut|缩写|code)$/i.test(cells[0]) && /^(短语|phrase|内容)$/i.test(cells[1]||'')) return;
+      items.push({ code: cells[0], phrase: cells[1] || '' });
+      return;
+    }
+    if (/\t/.test(t)){
+      var p = t.split('\t');
+      items.push({ phrase: (p[0]||'').trim(), code: (p[1]||'').trim() });
+      return;
+    }
+    if (/^[^\s=,]*=[^\s]/.test(t) && /^[a-zA-Z0-9\/;@#_\-]+=/.test(t)){
+      var i = t.indexOf('=');
+      items.push({ code: t.slice(0, i).trim(), phrase: t.slice(i + 1).trim() });
+      return;
+    }
+    if (t.indexOf(',') > 0){
+      var i2 = t.indexOf(',');
+      items.push({ phrase: t.slice(0, i2).trim(), code: t.slice(i2 + 1).trim() });
+      return;
+    }
+    items.push({ phrase: t, code: '' });
+  });
+
+  if (!items.length){ App.toast('没解析到内容'); return; }
+
+  if (replace) App.words = [];
+  var used = Object.create(null);
+  App.words.forEach(function(w){
+    var c = (w.code||'').trim().toLowerCase();
+    if (c) used[c] = 1;
+  });
+
+  var added = 0, skipped = 0;
+  items.forEach(function(it){
+    var phrase = (it.phrase || '').replace(/\\n/g, '\n').trim();
+    if (!phrase){ skipped++; return; }
+    if (App.words.some(function(w){ return w.phrase === phrase; })){ skipped++; return; }
+    var code = sanitizeCode(it.code);
+    if (!code && autoCode){
+      var base = App.cfg.prefix + baseCode(phrase, App.cfg.mode);
+      if (base.length > App.cfg.maxlen) base = base.slice(0, App.cfg.maxlen);
+      if (base) code = nextFreeCode(base, used);
+    }
+    if (code && used[code.toLowerCase()] && autoCode) code = nextFreeCode(code, used);
+    if (code) used[code.toLowerCase()] = 1;
+    App.words.push({ id: nid(), phrase: phrase, code: code, cat: '导入', on: true });
+    added++;
+  });
+
+  App.persist(); App.render();
+  App.close('mImport');
+  App.toast('导入 ' + added + ' 条' + (skipped ? '，跳过重复/空行 ' + skipped + ' 条' : ''));
+  document.getElementById('impText').value = '';
+};
+
+/* ---------- 模板 ---------- */
+var PRESETS = {
+  address: [
+    { phrase:'北京市朝阳区建国路88号SOHO现代城A座1801室，收件人：张三，电话：13800000000', code:'' },
+    { phrase:'上海市浦东新区世纪大道100号环球金融中心56层', code:'' },
+    { phrase:'广东省深圳市南山区科技园中区科苑路15号', code:'' }
+  ],
+  work: [
+    { phrase:'收到，我马上处理，稍后回复您。', code:'' },
+    { phrase:'您好，附件是本次的报价单，请查收，如有疑问随时沟通。', code:'' },
+    { phrase:'感谢您的耐心等待，问题已经解决，有任何其他需要随时联系我。', code:'' },
+    { phrase:'本邮件为自动回复，我已收到您的消息，会尽快与您联系。', code:'' }
+  ],
+  misc: [
+    { phrase:'我的邮箱：yourname@example.com', code:'' },
+    { phrase:'好的，没问题。', code:'' },
+    { phrase:'稍等，我看一下。', code:'' },
+    { phrase:'☺️', code:'' },
+    { phrase:'👍', code:'' }
+  ]
+};
+App.loadPreset = function(k){
+  var arr = PRESETS[k] || [];
+  var used = Object.create(null);
+  App.words.forEach(function(w){ var c=(w.code||'').trim().toLowerCase(); if (c) used[c]=1; });
+  var n = 0;
+  arr.forEach(function(p){
+    var base = App.cfg.prefix + baseCode(p.phrase, App.cfg.mode);
+    if (base.length > App.cfg.maxlen) base = base.slice(0, App.cfg.maxlen);
+    var code = base ? nextFreeCode(base, used) : '';
+    if (code) used[code] = 1;
+    App.words.push({ id: nid(), phrase: p.phrase, code: code, cat: '模板', on: true });
+    n++;
+  });
+  App.persist(); App.render();
+  App.toast('已载入 ' + n + ' 条模板，请根据自己情况修改');
+  window.scrollTo({ top: 600, behavior: 'smooth' });
+};
+
+/* ---------- 导出 ---------- */
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function activeItems(){
+  return App.words.filter(function(w){
+    return w.on && (w.phrase||'').trim() && (w.code||'').trim();
+  });
+}
+function buildPlist(items){
+  var s = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n' +
+    '<plist version="1.0">\n<array>\n';
+  items.forEach(function(it){
+    s += '\t<dict>\n' +
+         '\t\t<key>phrase</key>\n\t\t<string>' + esc(it.phrase) + '</string>\n' +
+         '\t\t<key>shortcut</key>\n\t\t<string>' + esc(it.code) + '</string>\n' +
+         '\t</dict>\n';
+  });
+  s += '</array>\n</plist>\n';
+  return s;
+}
+function download(name, text, mime){
+  var blob = new Blob([text], { type: (mime || 'text/plain') + ';charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 400);
+}
+function stamp(){
+  var d = new Date(), p = function(n){ return ('0'+n).slice(-2); };
+  return d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+}
+
+App.exportPlist = function(){
+  var items = activeItems();
+  if (!items.length){ App.toast('没有可导出的词条（需要短语+输入码都填好）'); return; }
+  var miss = App.words.filter(function(w){ return w.on && (w.phrase||'').trim() && !(w.code||'').trim(); }).length;
+  if (miss && !confirm('有 ' + miss + ' 条词条没有输入码，无法导入，将被忽略。继续导出？')) return;
+  download('TextReplacement_' + stamp() + '.plist', buildPlist(items));
+  App.toast('已导出 ' + items.length + ' 条 → 传到 Mac 拖入「文本替换」');
+};
+
+App.exportPlistBatch = function(){
+  var items = activeItems();
+  if (!items.length){ App.toast('没有可导出的词条'); return; }
+  var size = App.cfg.batch;
+  var n = Math.ceil(items.length / size);
+  if (n > 12 && !confirm('将生成 ' + n + ' 个文件。建议增大「分批导出条数」。继续？')) return;
+  for (var i = 0; i < n; i++){
+    var part = items.slice(i * size, (i + 1) * size);
+    (function(idx, p){
+      setTimeout(function(){
+        download('TextReplacement_part' + (idx + 1) + '_' + stamp() + '.plist', buildPlist(p));
+      }, idx * 350);
+    })(i, part);
+  }
+  App.toast('正在生成 ' + n + ' 个文件…每次只拖 1 个到 Mac，等同步完再拖下一个');
+};
+
+App.exportJSON = function(){
+  download('WordVault_backup_' + stamp() + '.json',
+    JSON.stringify({ v:1, cfg:App.cfg, words:App.words }, null, 2), 'application/json');
+  App.toast('JSON 备份已导出');
+};
+App.importJSONDialog = function(){ document.getElementById('fileJSON').click(); };
+App.importJSON = function(input){
+  var f = input.files && input.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){
+    try {
+      var d = JSON.parse(r.result);
+      var ws = d.words || d;
+      if (!Array.isArray(ws)) throw 0;
+      ws.forEach(function(w){ if (!w.id) w.id = nid(); w.on = w.on !== false; });
+      if (!confirm('导入 ' + ws.length + ' 条，替换当前全部词条？')) return;
+      App.words = ws;
+      if (d.cfg) { App.cfg = Object.assign(App.cfg, d.cfg); }
+      App.persist(); App.load(); App.render();
+      App.toast('已导入 ' + ws.length + ' 条');
+    } catch(e){ App.toast('文件格式不对'); }
+  };
+  r.readAsText(f);
+  input.value = '';
+};
+App.exportCSV = function(){
+  var rows = [['短语','输入码','分类','启用']];
+  App.words.filter(function(w){ return w.on; }).forEach(function(w){
+    rows.push([w.phrase, w.code, w.cat || '', '是']);
+  });
+  var csv = rows.map(function(r){
+    return r.map(function(c){ return '"' + String(c == null ? '' : c).replace(/"/g,'""') + '"'; }).join(',');
+  }).join('\n');
+  download('WordVault_' + stamp() + '.csv', '\uFEFF' + csv, 'text/csv');
+  App.toast('CSV 已导出');
+};
+App.exportSogou = function(){
+  var items = activeItems();
+  if (!items.length){ App.toast('没有可导出的词条'); return; }
+  var s = items.map(function(it){ return it.code + ',1=' + it.phrase; }).join('\n');
+  download('sogou_pc_' + stamp() + '.txt', s);
+  App.toast('已导出，在 Windows 搜狗「高级 › 自定义短语设置 › 导入」');
+};
+App.exportSogouBdi = function(){
+  var items = activeItems();
+  if (!items.length){ App.toast('没有可导出的词条'); return; }
+  var s = items.map(function(it){
+    return it.code + '=' + String(it.phrase).replace(/\r?\n/g, '\\n');
+  }).join('\n') + '\n';
+  downloadBdi('sogou_ios_' + stamp() + '.bdi', s);
+  App.toast('已导出 UTF-16 LE .bdi，建议先导 2~3 条验证格式');
+};
+function downloadBdi(name, text){
+  var buf = new ArrayBuffer(text.length * 2 + 2);
+  var view = new DataView(buf);
+  view.setUint8(0, 0xFF); view.setUint8(1, 0xFE);
+  for (var i = 0; i < text.length; i++) view.setUint16(2 + i * 2, text.charCodeAt(i), true);
+  var blob = new Blob([buf], { type: 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 400);
+}
+App.exportText = function(){
+  var s = activeItems().map(function(it){ return it.code + '\t' + it.phrase; }).join('\n');
+  download('WordVault_' + stamp() + '.txt', s);
+  App.toast('清单已导出');
+};
+
+/* ---------- 逐条录入助手 ---------- */
+App.asState = null;
+
+function loadAs(){
+  var s = lsGet('wv.assist', null);
+  return s && typeof s.i === 'number' ? s : { i:0, done:{}, mode:'full' };
+}
+App.openAssist = function(){
+  var items = activeItems();
+  if (!items.length){ App.toast('没有可录入的词条（需要短语+输入码都填好）'); return; }
+  App.asState = loadAs();
+  if (App.asState.i >= items.length) App.asState.i = 0;
+  document.getElementById('mAssist').classList.add('on');
+  App.asRender();
+};
+var AS_STEPS_FULL =
+  '<b>操作流程（完整模式）</b><br>' +
+  '1. 点上面两个按钮分别复制（变绿即成功）<br>' +
+  '2. 打开 <b>设置 › 通用 › 键盘 › 文本替换</b><br>' +
+  '3. 点右上角 <b>＋</b>，长按粘贴短语，再粘贴输入码<br>' +
+  '4. 点 <b>存储</b>，返回这里点「完成，下一条」';
+
+var AS_STEPS_FAST =
+  '<b>操作流程（快速模式）</b><br>' +
+  '1. 点「复制短语」，打开 <b>设置 › 通用 › 键盘 › 文本替换</b><br>' +
+  '2. 点 <b>＋</b>，长按粘贴短语<br>' +
+  '3. 输入码<b>直接手打</b>（就一个前缀加几个字母）<br>' +
+  '4. 点 <b>存储</b>，返回点「完成，下一条」<br>' +
+  '<span style="color:var(--tx3)">省掉一半复制操作，条目多时明显更快</span>';
+
+App.asRender = function(){
+  var items = activeItems();
+  var st = App.asState;
+  if (!st.mode) st.mode = 'full';
+  var fast = st.mode === 'fast';
+  document.getElementById('asModeFull').classList.toggle('on', !fast);
+  document.getElementById('asModeFast').classList.toggle('on', fast);
+  document.getElementById('asCardCode').classList.toggle('hidebtn', fast);
+  document.getElementById('asNote').style.display = fast ? 'block' : 'none';
+  document.getElementById('asSteps').innerHTML = fast ? AS_STEPS_FAST : AS_STEPS_FULL;
+  if (!items.length) return;
+  if (st.i >= items.length){
+    document.getElementById('asPhrase').textContent = '全部录入完成！';
+    document.getElementById('asCode').textContent = '';
+    document.getElementById('asBtnP').style.display = 'none';
+    document.getElementById('asCardCode').style.display = 'none';
+    document.getElementById('asCount').innerHTML = '共 ' + items.length + ' 条';
+    document.getElementById('asBar').style.width = '100%';
+    return;
+  }
+  document.getElementById('asCardCode').style.display = '';
+  var it = items[st.i];
+  document.getElementById('asBtnP').style.display = '';
+  document.getElementById('asBtnC').style.display = '';
+  document.getElementById('asPhrase').textContent = it.phrase;
+  document.getElementById('asCode').textContent = it.code;
+  document.getElementById('asCount').innerHTML = '<b>' + (st.i + 1) + '</b> / ' + items.length;
+  document.getElementById('asBar').style.width = ((st.i) / items.length * 100) + '%';
+  var b1 = document.getElementById('asBtnP'), b2 = document.getElementById('asBtnC');
+  var key = it.id;
+  b1.classList.toggle('done', !!st.done[key + 'p']);
+  b1.textContent = st.done[key + 'p'] ? '✓ 短语已复制' : '复制短语';
+  if (!fast){
+    b2.classList.toggle('done', !!st.done[key + 'c']);
+    b2.textContent = st.done[key + 'c'] ? '✓ 输入码已复制' : '复制输入码';
+  }
+};
+App.asMode = function(m){
+  App.asState.mode = m;
+  lsSet('wv.assist', App.asState);
+  App.asRender();
+};
+App.asGoto = function(){
+  var n = parseInt(document.getElementById('asJumpNo').value, 10);
+  var items = activeItems();
+  if (!n || !items.length){ App.toast('先填一个序号'); return; }
+  n = Math.max(1, Math.min(items.length, n));
+  App.asState.i = n - 1;
+  document.getElementById('asJumpNo').value = '';
+  lsSet('wv.assist', App.asState);
+  App.asRender();
+  App.toast('已跳到第 ' + n + ' 条');
+};
+App.asCopy = function(which){
+  var items = activeItems();
+  var it = items[App.asState.i];
+  if (!it) return;
+  var text = which === 'p' ? it.phrase : it.code;
+  copyText(text, function(ok){
+    if (ok){
+      App.asState.done[it.id + which] = 1;
+      lsSet('wv.assist', App.asState);
+      App.asRender();
+      App.toast(which === 'p' ? '短语已复制' : '输入码已复制');
+    } else App.toast('复制失败，请长按文字手动复制');
+  });
+};
+function copyText(text, cb){
+  if (navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){ cb(true); }, function(){ cb(fallback(text)); });
+  } else cb(fallback(text));
+}
+function fallback(text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.select(); ta.setSelectionRange(0, 999999);
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+App.asNext = function(){
+  var items = activeItems();
+  App.asState.i++;
+  if (App.asState.i > items.length) App.asState.i = items.length;
+  lsSet('wv.assist', App.asState);
+  App.asRender();
+  if (App.asState.i >= items.length) App.toast('全部完成 🎉');
+};
+App.asSkip = function(){ App.asNext(); };
+App.asJump = function(){
+  try { window.location.href = 'App-prefs:root=General&path=Keyboard/TextReplacements'; }
+  catch(e){ App.toast('请手动打开 设置 › 通用 › 键盘 › 文本替换'); }
+};
+
+/* ---------- toast ---------- */
+var toastTimer = null;
+App.toast = function(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('on'); }, 2000);
+};
+
+/* ---------- 启动 ---------- */
+document.addEventListener('DOMContentLoaded', function(){
+  App.load();
+  App.render();
+
+  // 关闭弹窗
+  document.querySelectorAll('.modal').forEach(function(m){
+    m.addEventListener('click', function(e){ if (e.target === m) m.classList.remove('on'); });
+  });
+  // Tab 键在表格里换行时自动补输入码
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape'){
+      document.querySelectorAll('.modal.on').forEach(function(m){ m.classList.remove('on'); });
+    }
+  });
+
+  // 首次访问：引导
+  if (!App.words.length && !lsGet('wv.seen', false)){
+    lsSet('wv.seen', true);
+  }
+
+  // PWA 离线缓存：仅在 http/https 下生效，file:// 直接双击打开时静默跳过
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+});
+window.addEventListener('beforeunload', function(){
+  try { if (App.persist) App.persist(); } catch(e){}
+});
+</script>
+
+<datalist id="cats">
+  <option value="地址">
+  <option value="联系方式">
+  <option value="发票信息">
+  <option value="工作话术">
+  <option value="常用短句">
+  <option value="个人信息">
+  <option value="导入">
+  <option value="模板">
+  <option value="自定义">
+</datalist>
+
+</body>
+</html>

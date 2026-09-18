@@ -1,29 +1,50 @@
 #!/usr/bin/env python3
-"""Generate sample contacts plist file for iOS Text Replacement"""
+"""Generate a sample contacts plist for iOS Text Replacement.
 
-contacts = ["张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十",
-            "刘十一", "陈十二", "杨十三", "黄十四", "周十五", "吴十六"]
+This is demo/smoke-test data for CI, not a real address book. As with
+generate_cities.py, every entry needs a non-empty shortcut to be usable.
+"""
 
-plist = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<array>
-'''
+import os
+import plistlib
+import re
 
-for name in contacts:
-    plist += f'''    <dict>
-        <key>phrase</key>
-        <string>{name}</string>
-        <key>shortcut</key>
-        <string></string>
-    </dict>
-'''
+try:
+    from pypinyin import Style, lazy_pinyin
+except ImportError:
+    raise SystemExit(
+        'pypinyin is required: python3 -m pip install pypinyin\n'
+        'Without it no shortcut can be derived, and entries with an empty '
+        'shortcut are unusable on iOS.'
+    )
 
-plist += '''</array>
-</plist>
-'''
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
-with open('contacts_sample.plist', 'w', encoding='utf-8') as f:
-    f.write(plist)
+CONTACTS = [
+    "张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十",
+    "刘十一", "陈十二", "杨十三", "黄十四", "周十五", "吴十六",
+]
 
-print(f'Generated contacts_sample.plist with {len(contacts)} sample contacts')
+
+def initials(text: str) -> str:
+    parts = lazy_pinyin(text, style=Style.FIRST_LETTER, errors='default')
+    return re.sub(r'[^a-z0-9]', '', ''.join(parts).lower())
+
+
+def main() -> int:
+    entries = [
+        {'phrase': name, 'shortcut': initials(name)}
+        for name in CONTACTS
+    ]
+    entries = [e for e in entries if e['shortcut']]
+
+    out = os.path.join(ROOT, 'contacts_sample.plist')
+    with open(out, 'wb') as f:
+        plistlib.dump(entries, f, fmt=plistlib.FMT_XML, sort_keys=True)
+
+    print(f'Generated {out} with {len(entries)} sample contacts')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

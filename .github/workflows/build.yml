@@ -3,6 +3,10 @@ name: Generate iOS Word Lists
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'WordVault/cities.json'
+      - 'scripts/**'
+      - '.github/workflows/build.yml'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -15,11 +19,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pypinyin
+        run: python3 -m pip install --quiet pypinyin
+
       - name: Generate cities plist
         run: python3 scripts/generate_cities.py
 
       - name: Generate contacts plist
         run: python3 scripts/generate_contacts.py
+
+      - name: Verify every entry has a phrase and a shortcut
+        run: python3 scripts/verify_plist.py
 
       - name: Upload plist files
         uses: actions/upload-artifact@v4
@@ -33,13 +48,22 @@ jobs:
       - name: Summary
         run: |
           echo "=========================================="
-          echo "   GENERATION COMPLETED!"
+          echo "   GENERATION COMPLETED"
           echo "=========================================="
           echo ""
-          echo "Download ios-wordlists from Artifacts"
+          echo "Download 'ios-wordlists' from the Artifacts section above."
           echo ""
-          echo "iPhone Import Steps:"
-          echo "  1. Settings > General > Keyboard > Text Replacement"
-          echo "  2. Tap + > Import Phrases..."
-          echo "  3. Select the downloaded .plist file"
+          echo ">>> IMPORTANT: these files CANNOT be imported on an iPhone. <<<"
+          echo ""
+          echo "iOS has no import entry point in"
+          echo "  Settings > General > Keyboard > Text Replacement"
+          echo "and never has. Bulk import is macOS-only:"
+          echo "  1. On a Mac, open System Settings > Keyboard > Text Replacement"
+          echo "  2. Drag the .plist onto the list"
+          echo "  3. iCloud syncs it down to your iPhone"
+          echo ""
+          echo "No Mac? Use the web tool instead — it exports the same plists plus"
+          echo "Sogou and entry-by-entry formats:"
+          echo "  https://zzxx872.github.io/wordvault/"
+          echo ""
           ls -lh *.plist

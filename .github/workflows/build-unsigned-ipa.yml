@@ -1,0 +1,67 @@
+# Cloud-build the SwiftUI app into an UNSIGNED .ipa using a macOS runner.
+#
+# Think before you use this. Compiling an app and sideloading it onto a phone
+# does NOT solve the "bulk-import Text Replacement" problem, because iOS does
+# not expose an API for writing text replacements. The app can do nothing the
+# web tool in docs/ cannot already do — and the web tool needs no signing.
+#
+# That said, the capability is here if you want it. Output: an unsigned .ipa
+# that must be re-signed on Windows with AltStore / Sideloadly plus your Apple
+# ID. Free Apple ID signing expires after 7 days and allows at most 3 apps.
+#
+# Trigger manually from the Actions tab (deliberately not on push, because
+# macOS runners bill at 10x).
+
+name: Build unsigned iOS ipa
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos || true
+
+      # If you need the iOS 26 SDK, switch the runner to macos-26, or select a
+      # newer Xcode here with:
+      #   sudo xcode-select -s /Applications/Xcode_26*.app
+
+      - name: Build (code signing disabled)
+        run: |
+          xcodebuild \
+            -project WordVault.xcodeproj \
+            -scheme WordVault \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build
+
+      - name: Package unsigned ipa
+        run: |
+          APP="build/Build/Products/Release-iphoneos/WordVault.app"
+          test -d "$APP" || { echo "App bundle not found at $APP"; ls -R build/Build/Products || true; exit 1; }
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qr WordVault-unsigned.ipa Payload
+          ls -lh WordVault-unsigned.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WordVault-unsigned-ipa
+          path: WordVault-unsigned.ipa
+          retention-days: 30

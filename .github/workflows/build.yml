@@ -1,0 +1,131 @@
+name: Build iOS Project
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List available simulators
+        run: xcrun simctl list devices available | head -30
+
+      - name: Build project
+        run: |
+          xcodebuild -project WordVault.xcodeproj \
+            -scheme WordVault \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO 2>&1 | tail -50
+
+      - name: Generate cities plist
+        run: |
+          cat << 'EOF' > /tmp/generate_plist.py
+import json
+import os
+
+# Read cities from cities.json
+with open('WordVault/cities.json', 'r', encoding='utf-8') as f:
+    cities = json.load(f)
+
+# Generate plist content
+plist_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+'''
+
+for city in cities:
+    # Escape XML special characters
+    city_escaped = city.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    plist_content += f'''    <dict>
+        <key>phrase</key>
+        <string>{city_escaped}</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+'''
+
+plist_content += '''</array>
+</plist>
+'''
+
+# Write plist file
+with open('cities.plist', 'w', encoding='utf-8') as f:
+    f.write(plist_content)
+
+print(f"Generated plist with {len(cities)} cities")
+EOF
+          python3 /tmp/generate_plist.py
+
+      - name: Generate contacts plist template
+        run: |
+          # Create a sample contacts plist for testing
+          # In real use, user would import their own contacts
+          cat << 'EOF' > contacts_sample.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+    <dict>
+        <key>phrase</key>
+        <string>张三</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+    <dict>
+        <key>phrase</key>
+        <string>李四</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+    <dict>
+        <key>phrase</key>
+        <string>王五</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+</array>
+</plist>
+EOF
+          echo "Created sample contacts plist (replace with your actual contacts)"
+
+      - name: Upload plist files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-wordlists
+          path: |
+            cities.plist
+            contacts_sample.plist
+          retention-days: 30
+
+      - name: Display download info
+        run: |
+          echo ""
+          echo "========================================"
+          echo "Build completed successfully!"
+          echo "========================================"
+          echo ""
+          echo "Download the plist files from the Artifacts section above."
+          echo ""
+          echo "To import into iOS:"
+          echo "1. Download cities.plist"
+          echo "2. Open Settings → General → Keyboard → Text Replacement"
+          echo "3. Tap + → Import Phrases..."
+          echo "4. Select cities.plist"
+          echo ""
+          ls -la *.plist

@@ -32,21 +32,18 @@ jobs:
           xcodebuild -project WordVault.xcodeproj \
             -scheme WordVault \
             -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
             build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            2>&1 | tee build.log
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build.log
 
-          # Check if build succeeded
           if grep -q "BUILD SUCCEEDED" build.log; then
             echo "BUILD_RESULT=success" >> $GITHUB_ENV
-            echo "✅ Build succeeded!"
+            echo "Build succeeded!"
           else
             echo "BUILD_RESULT=failed" >> $GITHUB_ENV
-            echo "❌ Build failed! Showing last 100 lines of log:"
-            tail -100 build.log
+            tail -50 build.log
             exit 1
           fi
 
@@ -54,80 +51,7 @@ jobs:
         if: env.BUILD_RESULT == 'success'
         run: |
           echo "Generating cities.plist..."
-
-          # Read cities from JSON file
-          CITIES_JSON=$(cat WordVault/cities.json)
-
-          # Generate plist using Python
-          python3 << 'PYTHON_EOF'
-import json
-import sys
-
-# Read cities
-with open('WordVault/cities.json', 'r', encoding='utf-8') as f:
-    cities = json.load(f)
-
-# Generate plist
-plist = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<array>
-'''
-
-for city in cities:
-    # Escape XML special characters
-    city_esc = city.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
-    plist += f'''    <dict>
-        <key>phrase</key>
-        <string>{city_esc}</string>
-        <key>shortcut</key>
-        <string></string>
-    </dict>
-'''
-
-plist += '''</array>
-</plist>
-'''
-
-# Write file
-with open('cities.plist', 'w', encoding='utf-8') as f:
-    f.write(plist)
-
-print(f"✅ Generated cities.plist with {len(cities)} cities")
-PYTHON_EOF
-
-          ls -la cities.plist
-
-      - name: Generate sample contacts plist
-        if: env.BUILD_RESULT == 'success'
-        run: |
-          python3 << 'PYTHON_EOF'
-contacts = ["张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十"]
-
-plist = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<array>
-'''
-
-for name in contacts:
-    plist += f'''    <dict>
-        <key>phrase</key>
-        <string>{name}</string>
-        <key>shortcut</key>
-        <string></string>
-    </dict>
-'''
-
-plist += '''</array>
-</plist>
-'''
-
-with open('contacts_sample.plist', 'w', encoding='utf-8') as f:
-    f.write(plist)
-
-print(f"✅ Generated contacts_sample.plist with {len(contacts)} sample contacts")
-PYTHON_EOF
+          python3 scripts/generate_plist.py
 
       - name: Upload plist files
         if: env.BUILD_RESULT == 'success'
@@ -136,23 +60,18 @@ PYTHON_EOF
           name: ios-wordlists
           path: |
             cities.plist
-            contacts_sample.plist
           retention-days: 30
 
       - name: Success Summary
         if: env.BUILD_RESULT == 'success'
         run: |
+          echo "========================================"
+          echo "BUILD COMPLETED!"
+          echo "========================================"
+          echo "Download cities.plist from Artifacts"
           echo ""
-          echo "🎉========================================🎉"
-          echo "   BUILD & EXPORT COMPLETED SUCCESSFULLY!"
-          echo "🎉========================================🎉"
-          echo ""
-          echo "📥 Download plist files from Artifacts section"
-          echo ""
-          echo "📱 iPhone 导入步骤:"
-          echo "   1. Settings → General → Keyboard → Text Replacement"
-          echo "   2. Tap + → Import Phrases..."
-          echo "   3. Select cities.plist"
-          echo ""
-          echo "📋 Generated files:"
+          echo "iPhone Import Steps:"
+          echo "1. Settings > General > Keyboard > Text Replacement"
+          echo "2. Tap + > Import Phrases..."
+          echo "3. Select cities.plist"
           ls -lh *.plist

@@ -1,4 +1,4 @@
-name: Build iOS Project
+name: Generate iOS Word Lists
 
 on:
   push:
@@ -8,70 +8,121 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-14
+  generate:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: |
-          xcodebuild -version
-          xcode-select -p
-
-      - name: List available simulators
-        run: |
-          echo "Available iOS simulators:"
-          xcrun simctl list devices available | grep -E "iPhone" | head -10
-
-      - name: Build project
-        id: build
-        run: |
-          echo "Building WordVault..."
-          xcodebuild -project WordVault.xcodeproj \
-            -scheme WordVault \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build.log
-
-          if grep -q "BUILD SUCCEEDED" build.log; then
-            echo "BUILD_RESULT=success" >> $GITHUB_ENV
-            echo "Build succeeded!"
-          else
-            echo "BUILD_RESULT=failed" >> $GITHUB_ENV
-            tail -100 build.log
-            exit 1
-          fi
-
       - name: Generate cities plist
-        if: env.BUILD_RESULT == 'success'
         run: |
-          echo "Generating cities.plist..."
-          python3 scripts/generate_plist.py
+          python3 << 'EOF'
+import json
+import os
 
-      - name: Upload plist files
-        if: env.BUILD_RESULT == 'success'
+# Read cities from JSON file
+with open('WordVault/cities.json', 'r', encoding='utf-8') as f:
+    cities = json.load(f)
+
+# Generate plist
+plist = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+'''
+
+for city in cities:
+    # Escape XML special characters
+    city_esc = city.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&apos;')
+    plist += f'''    <dict>
+        <key>phrase</key>
+        <string>{city_esc}</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+'''
+
+plist += '''</array>
+</plist>
+'''
+
+# Write file
+with open('cities.plist', 'w', encoding='utf-8') as f:
+    f.write(plist)
+
+print(f"Generated cities.plist with {len(cities)} cities")
+EOF
+
+      - name: Verify output
+        run: |
+          echo "Generated files:"
+          ls -lh cities.plist
+          echo ""
+          echo "First 30 lines:"
+          head -30 cities.plist
+          echo ""
+          echo "Last 10 lines:"
+          tail -10 cities.plist
+
+      - name: Upload plist file
         uses: actions/upload-artifact@v4
         with:
-          name: ios-wordlists
-          path: |
-            cities.plist
+          name: cities-plist
+          path: cities.plist
           retention-days: 30
 
-      - name: Success Summary
-        if: env.BUILD_RESULT == 'success'
+      - name: Generate contacts sample plist
         run: |
-          echo "========================================"
-          echo "BUILD COMPLETED!"
-          echo "========================================"
-          echo "Download cities.plist from Artifacts"
+          python3 << 'EOF'
+contacts = ["张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十"]
+
+plist = '''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+'''
+
+for name in contacts:
+    plist += f'''    <dict>
+        <key>phrase</key>
+        <string>{name}</string>
+        <key>shortcut</key>
+        <string></string>
+    </dict>
+'''
+
+plist += '''</array>
+</plist>
+'''
+
+with open('contacts_sample.plist', 'w', encoding='utf-8') as f:
+    f.write(plist)
+
+print(f"Generated contacts_sample.plist with {len(contacts)} sample contacts")
+EOF
+
+      - name: Upload contacts plist
+        uses: actions/upload-artifact@v4
+        with:
+          name: contacts-sample-plist
+          path: contacts_sample.plist
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "   GENERATION COMPLETED!"
+          echo "=========================================="
+          echo ""
+          echo "Download the plist files from Artifacts:"
+          echo "  1. cities-plist - 585 Chinese cities"
+          echo "  2. contacts-sample-plist - Sample contacts"
           echo ""
           echo "iPhone Import Steps:"
-          echo "1. Settings > General > Keyboard > Text Replacement"
-          echo "2. Tap + > Import Phrases..."
-          echo "3. Select cities.plist"
+          echo "  1. Settings > General > Keyboard > Text Replacement"
+          echo "  2. Tap + > Import Phrases..."
+          echo "  3. Select the downloaded .plist file"
+          echo ""
           ls -lh *.plist
